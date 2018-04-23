@@ -1,0 +1,16 @@
+{
+	"nanoleaf Light Panels Adapter settings" : "nanoleaf Light Panels Adapter settings",
+	"Main settings" : "Main settings",
+	"Additional settings" : "Additional settings",
+	"Host/IP address": "Host/IP address",
+	"Hostname or IP address of nanoleaf Light Panels controller": "Hostname or IP address of nanoleaf Light Panels controller",
+	"Port": "Port",
+	"HTTP port of nanoleaf Light Panels controller": "HTTP port of nanoleaf light panels controller",
+	"Authentification token": "Authentification token",
+	"Authentification token for nanoleaf Light Panels OpenAPI": "Authentification token for nanoleaf Light Panels OpenAPI. Enter if you have already a token.<br>Leave empty to try to automatically obtain token when adapter starts. Device has to be in paring mode (press and hold power button for 5-7 seconds).",
+	"On save adapter restarts with new config immediately": "On save adapter restarts with new config immediately",
+	"Polling interval": "Polling interval",
+	"Interval in ms for status update polling": "Interval in ms for status update polling",
+	"Reconnect interval": "Reconnect interval",
+	"Interval in seconds for reconnection attempts": "Interval in seconds for reconnection attempts"
+}

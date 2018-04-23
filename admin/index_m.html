@@ -1,0 +1,110 @@
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="../../lib/css/materialize.css">
+<link rel="stylesheet" type="text/css" href="../../css/adapter.css"/>
+<style>
+	.m .col .select-wrapper+label {
+		top: -26px;  
+	}
+	.m span{
+		font-size: 0.9em;
+	}
+</style>
+
+<script type="text/javascript" src="../../lib/js/jquery-3.2.1.min.js"></script>
+<script type="text/javascript" src="../../socket.io/socket.io.js"></script>
+<script type="text/javascript" src="../../js/translate.js"></script>
+<script type="text/javascript" src="../../lib/js/materialize.js"></script>
+<script type="text/javascript" src="../../js/adapter-settings.js"></script>
+<script type="text/javascript" src="words.js"></script>
+<!-- you have to define 2 functions in the global scope: -->
+<script type="text/javascript">
+	// the function loadSettings has to exist ...
+	function load(settings, onChange) {
+		if (!settings) return;
+		
+		$(".value").on("input", function() { onChange() });
+		       
+		$("#host").val(settings["host"]);
+		$("#port").val(settings["port"]);
+		$("#authtoken").val(settings["authtoken"]);
+		$("#pollingInterval").val(settings["pollingInterval"]);
+		$("#reconnectInterval").val(settings["reconnectInterval"]);
+        
+        onChange(false);
+        M.updateTextFields();  // function Materialize.updateTextFields(); to reinitialize all the Materialize labels on the page if you are dynamically adding inputs.
+    }
+
+    // ... and the function save has to exist.
+    // you have to make sure the callback is called with the settings object as first param!
+    function save(callback) {
+        var obj = {};
+        
+        obj["host"] = $("#host").val();
+        obj["port"] = $("#port").val();
+        obj["authtoken"] = $("#authtoken").val();
+        obj["pollingInterval"] = $("#pollingInterval").val();
+        obj["reconnectInterval"] = $("#reconnectInterval").val();
+        
+        callback(obj);
+    }
+</script>
+</head>
+<body>
+    <!-- you have to put your config page in a div with id adapter-container -->
+    <div class="m adapter-container">
+    	<div class="row">
+	        <div class="col s12">
+	            <ul class="tabs">
+	                <li class="tab col s2"><a href="#tab-main"     class="translate active">Main settings</a></li>
+	                <li class="tab col s2"><a href="#tab-advanced" class="translate">Additional settings</a></li>
+	            </ul>
+	        </div>
+	        <div id="tab-main" class="col s12 page">
+	            <div class="row">
+	                <div class="input-field col s6 m6 l6">
+	                    <img src="nanoleaf-lightpanels.png" class="logo">
+	                </div>
+	            </div>
+	            <div class="row">
+	                <div class="input-field col s12 m6 l3">
+	                    <input type="text" class="value" id="host">
+	                    <label for="host" class="translate">Host/IP address</label>
+	                    <span class="translate">Hostname or IP address of nanoleaf Light Panels controller</span>
+	                </div>
+	                <div class="input-field col s12 m6 l3">
+	                    <input type="number" class="value" id="port" value="16021" />
+	                    <label for="port" class="translate">Port</label>
+	                    <span class="translate">HTTP port of nanoleaf Light Panels controller</span>
+	                </div>
+	                <div class="input-field col s12 m12 l6">
+	                    <input type="text" class="value" id="authtoken" >
+	                    <label for="authtoken" class="translate">Authentification token</label>
+	                    <span class="translate">Authentification token for nanoleaf Light Panels OpenAPI</span>
+	                </div>
+	           </div>
+	           <div class="row">
+	                <div class="col s12">
+	                    <p class="translate">On save adapter restarts with new config immediately</p>
+	                </div>
+	           </div>
+		    </div>
+		    <div id="tab-advanced" class="col s12 page">
+		    	<div class="row">
+					<div class="input-field col s12 m12 l12">
+		        		<input type="number" class="value" id="pollingInterval" min="500" max="600000"/>
+		            	<label for="pollingInterval" class="translate">Polling interval</label>
+		            	<span class="translate">Interval in ms for status update polling</span>
+		            </div>
+					<div class="input-field col s12 m12 l12">
+		        		<input type="number" class="value" id="reconnectInterval" min="10" max="21600"/>
+		            	<label for="reconnectInterval" class="translate">Reconnect interval</label>
+		            	<span class="translate">Interval in seconds for reconnection attempts</span>
+					</div>
+				</div>
+	    	</div>
+	    </div>
+    </div>
+</body>
+
+</html>

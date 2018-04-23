@@ -1,0 +1,87 @@
+<html>
+<link rel="stylesheet" type="text/css" href="../../lib/css/themes/jquery-ui/redmond/jquery-ui.min.css"/>
+<link rel="stylesheet" type="text/css" href="../../css/adapter.css"/>
+
+<script type="text/javascript" src="../../lib/js/jquery-1.11.1.min.js"></script>
+<script type="text/javascript" src="../../socket.io/socket.io.js"></script>
+<script type="text/javascript" src="../../lib/js/jquery-ui-1.10.3.full.min.js"></script>
+<script type="text/javascript" src="../../js/translate.js"></script>
+<script type="text/javascript" src="../../js/adapter-settings.js"></script>
+<script type="text/javascript" src="words.js"></script>
+<style>
+	.description {
+		font-size: 0.8em;
+	}
+</style>
+<!-- you have to define 2 functions in the global scope: -->
+<script type="text/javascript">
+	// the function loadSettings has to exist ...
+	function load(settings, onChange) {
+		if (!settings) return;
+		
+		$(".value").on("input", function() { onChange() });
+		       
+		$("#host").val(settings["host"]);
+		$("#port").val(settings["port"]);
+		$("#authtoken").val(settings["authtoken"]);
+		$("#pollingInterval").val(settings["pollingInterval"]);
+		$("#reconnectInterval").val(settings["reconnectInterval"]);
+        
+        onChange(false);
+        M.updateTextFields();  // function Materialize.updateTextFields(); to reinitialize all the Materialize labels on the page if you are dynamically adding inputs.
+    }
+
+    // ... and the function save has to exist.
+    // you have to make sure the callback is called with the settings object as first param!
+    function save(callback) {
+        var obj = {};
+        
+        obj["host"] = $("#host").val();
+        obj["port"] = $("#port").val();
+        obj["authtoken"] = $("#authtoken").val();
+        obj["pollingInterval"] = $("#pollingInterval").val();
+        obj["reconnectInterval"] = $("#reconnectInterval").val();
+        
+        callback(obj);
+    }
+</script>
+
+<!-- you have to put your config page in a div with id adapter-container -->
+<div id="adapter-container" width="100%">
+    <table>
+    	<tr>
+        	<td><img src="nanoleaf-lightpanels.png" width="64" height="64"/></td>
+        	<td><h3 class="translate">nanoleaf Light Panels Adapter settings</h3></td>
+        </tr>
+	</table>
+	<table>
+    	<tr>
+        	<td width="25%"><label for="host" class="translate">Host/IP address</label></td>
+        	<td width="25%"><input type="text" class="value" id="host"></td>	
+        	<td width="50%"><span class="translate description">Hostname or IP address of nanoleaf Light Panels controller</span></td>
+        </tr>
+        <tr>
+        	<td><label for="port" class="translate">Port</label></td>
+			<td><input type="number" class="value" id="port" value="16021" /></td>
+			<td><span class="translate description">HTTP port of nanoleaf Light Panels controller</span></td>
+        </tr>
+        <tr>
+        	<td><label for="authtoken" class="translate">Authentification token</label></td>
+			<td><input type="text" class="value" id="authtoken" ></td>
+			<td><span class="translate description">Authentification token for nanoleaf Light Panels OpenAPI</span></td>
+        </tr>
+    	<tr>
+        	<td><label for="pollingInterval" class="translate">Polling interval</label></td>
+			<td><input type="number" class="value" id="pollingInterval" min="500" max="600000"/></td>
+			<td><span class="translate description">Interval in ms for status update polling</span></td>
+        </tr>
+    	<tr>
+        	<td><label for="reconnectInterval" class="translate">Polling interval</label></td>
+			<td><input type="number" class="value" id="reconnectInterval" min="10" max="21600"/></td>
+			<td><span class="translate description">Interval in ms for status update polling</span></td>
+        </tr>
+	</table>
+	<p class="translate">On save adapter restarts with new config immediately</p>
+</div>
+
+</html>

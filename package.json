@@ -1,0 +1,44 @@
+{
+  "name": "iobroker.nanoleaf-lightpanels",
+  "version": "0.1.0",
+  "description": "ioBroker Adapter to control the nanoleaf Light Panels",
+  "author": {
+    "name": "daniel_2k",
+    "email": "daniel_2k@outlook.com"
+  },
+  "maintainers": [
+    {
+      "name": "daniel_2k",
+      "email": "daniel_2k@outlook.com"
+    }
+  ],
+  "homepage": "https://github.com/daniel-2k/ioBroker.nanoleaf-lightpanels",
+  "license": "MIT",
+  "keywords": [
+	"nanoleaf",
+	"light panels",
+	"light",
+	"led",
+	"rgb"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daniel-2k/ioBroker.nanoleaf-lightpanels"
+  },
+  "dependencies": {
+    "nanoleaf-aurora-client": "^1.1.8"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "mocha": "^4.1.0",
+    "chai": "^4.1.2"
+  },
+  "main": "main.js",
+  "scripts": {
+    "test": "node node_modules/mocha/bin/mocha --exit"
+  },
+  "bugs": {
+    "url": "https://github.com/daniel-2k/ioBroker.nanoleaf-lightpanels/issues"
+  },
+  "readmeFilename": "README.md"
+}
