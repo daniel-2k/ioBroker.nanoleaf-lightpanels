@@ -93,7 +93,7 @@
                 "type": "string",
                 "read": true,
                 "write": false,
-                "role": "indicator"
+                "role": "info.name"
             }
         },
         {
@@ -104,7 +104,7 @@
                 "type": "string",
                 "read": true,
                 "write": false,
-                "role": "indicator"
+                "role": "info.serial"
             }
         },
         {
@@ -115,7 +115,7 @@
                 "type": "string",
                 "read": true,
                 "write": false,
-                "role": "indicator"
+                "role": "info.version"
             }
         },
         {
@@ -126,18 +126,18 @@
                 "type": "string",
                 "read": true,
                 "write": false,
-                "role": "indicator"
+                "role": "info.model"
             }
         },
         {
             "_id": "Rhythm.info.connected",
             "type": "state",
             "common": {
-                "name": "Rhythm module connectd to nanoleaf light panels",
+                "name": "Rhythm module connected to nanoleaf light panels",
                 "type": "string",
                 "read": true,
                 "write": false,
-                "role": "indicator"
+                "role": "text"
             }
         },
         {
@@ -148,7 +148,7 @@
                 "type": "string",
                 "read": true,
                 "write": false,
-                "role": "indicator"
+                "role": "text"
             }
         },
         {
@@ -159,7 +159,7 @@
                 "type": "string",
                 "read": true,
                 "write": false,
-                "role": "indicator"
+                "role": "info.version.hw"
             }
         },
         {
@@ -170,7 +170,7 @@
                 "type": "string",
                 "read": true,
                 "write": false,
-                "role": "indicator"
+                "role": "info.version"
             }
         },
         {
@@ -181,7 +181,7 @@
                 "type": "string",
                 "read": true,
                 "write": false,
-                "role": "indicator"
+                "role": "text"
             }
         },
         {
@@ -192,7 +192,7 @@
                 "type": "string",
                 "read": true,
                 "write": false,
-                "role": "indicator"
+                "role": "text"
             }
         },
         {
@@ -278,7 +278,7 @@
                 "type": "number",
                 "read": true,
                 "write": false,
-                "role": "indicator",
+                "role": "value.color.mode",
                 "desc": "Color Mode"
             }
         },
@@ -312,7 +312,7 @@
             "common": {
                 "name": "Identify panels",
                 "type": "number",
-                "read": true,
+                "read": false,
                 "write": true,
                 "min": 0,
                 "role": "button",
