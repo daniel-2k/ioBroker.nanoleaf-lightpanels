@@ -134,10 +134,10 @@
             "type": "state",
             "common": {
                 "name": "Rhythm module connected to nanoleaf light panels",
-                "type": "string",
+                "type": "boolean",
                 "read": true,
                 "write": false,
-                "role": "text"
+                "role": "indicator.connected"
             }
         },
         {
@@ -145,10 +145,10 @@
             "type": "state",
             "common": {
                 "name": "Rhythm module active",
-                "type": "string",
+                "type": "boolean",
                 "read": true,
                 "write": false,
-                "role": "text"
+                "role": "indicator"
             }
         },
         {
@@ -178,10 +178,10 @@
             "type": "state",
             "common": {
                 "name": "AUX of rhythm module available",
-                "type": "string",
+                "type": "boolean",
                 "read": true,
                 "write": false,
-                "role": "text"
+                "role": "indicator"
             }
         },
         {
@@ -189,10 +189,10 @@
             "type": "state",
             "common": {
                 "name": "Mode of rhythm module",
-                "type": "string",
+                "type": "number",
                 "read": true,
                 "write": false,
-                "role": "text"
+                "role": "value"
             }
         },
         {
@@ -275,7 +275,7 @@
             "type": "state",
             "common": {
                 "name": "Color Mode",
-                "type": "number",
+                "type": "string",
                 "read": true,
                 "write": false,
                 "role": "value.color.mode",
