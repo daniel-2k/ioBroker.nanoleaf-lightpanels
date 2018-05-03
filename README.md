@@ -35,7 +35,11 @@ in Cloud adapter under the same smartname.
 
 ## Changelog
 
-### 0.1.0
+### 0.2.0 (2018-05-03)
+* (daniel_2k) adjusted types and roles of states according API JSON response data types
+* (daniel_2k) compatible with node.js 4.x
+
+### 0.1.0 (2018-04-23)
 * (daniel_2k) initial release
 
 ## License

@@ -206,7 +206,7 @@ function getAuthToken(address, port) {
 	}
 	
 	const req = http.request(options, (res) => {
-		const { statusCode } = res;
+		const statusCode = res.statusCode;
 		const contentType = res.headers['content-type'];
 
 		switch (statusCode) {

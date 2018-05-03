@@ -1,8 +1,12 @@
 {
     "common": {
         "name": "nanoleaf-lightpanels",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "news": {
+            "0.2.0": {
+                "en": "adjusted types and roles of states according API JSON response data types\ncompatible with node.js 4.x",
+                "de": "Datentypen und Rollen der Datenpunkte nach API-Referenz angepasst/korrigiert\nkompatibel mit node.js 4.x"
+            },
             "0.1.0": {
                 "en": "initial version",
                 "de": "Initiale Version"
