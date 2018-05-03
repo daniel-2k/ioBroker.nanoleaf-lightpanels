@@ -93,7 +93,7 @@
                 "type": "string",
                 "read": true,
                 "write": false,
-                "role": "indicator"
+                "role": "info.name"
             }
         },
         {
@@ -104,7 +104,7 @@
                 "type": "string",
                 "read": true,
                 "write": false,
-                "role": "indicator"
+                "role": "info.serial"
             }
         },
         {
@@ -115,7 +115,7 @@
                 "type": "string",
                 "read": true,
                 "write": false,
-                "role": "indicator"
+                "role": "info.version"
             }
         },
         {
@@ -126,18 +126,18 @@
                 "type": "string",
                 "read": true,
                 "write": false,
-                "role": "indicator"
+                "role": "info.model"
             }
         },
         {
             "_id": "Rhythm.info.connected",
             "type": "state",
             "common": {
-                "name": "Rhythm module connectd to nanoleaf light panels",
-                "type": "string",
+                "name": "Rhythm module connected to nanoleaf light panels",
+                "type": "boolean",
                 "read": true,
                 "write": false,
-                "role": "indicator"
+                "role": "indicator.connected"
             }
         },
         {
@@ -145,7 +145,7 @@
             "type": "state",
             "common": {
                 "name": "Rhythm module active",
-                "type": "string",
+                "type": "boolean",
                 "read": true,
                 "write": false,
                 "role": "indicator"
@@ -159,7 +159,7 @@
                 "type": "string",
                 "read": true,
                 "write": false,
-                "role": "indicator"
+                "role": "info.version.hw"
             }
         },
         {
@@ -170,7 +170,7 @@
                 "type": "string",
                 "read": true,
                 "write": false,
-                "role": "indicator"
+                "role": "info.version"
             }
         },
         {
@@ -178,7 +178,7 @@
             "type": "state",
             "common": {
                 "name": "AUX of rhythm module available",
-                "type": "string",
+                "type": "boolean",
                 "read": true,
                 "write": false,
                 "role": "indicator"
@@ -189,10 +189,10 @@
             "type": "state",
             "common": {
                 "name": "Mode of rhythm module",
-                "type": "string",
+                "type": "number",
                 "read": true,
                 "write": false,
-                "role": "indicator"
+                "role": "value"
             }
         },
         {
@@ -275,10 +275,10 @@
             "type": "state",
             "common": {
                 "name": "Color Mode",
-                "type": "number",
+                "type": "string",
                 "read": true,
                 "write": false,
-                "role": "indicator",
+                "role": "value.color.mode",
                 "desc": "Color Mode"
             }
         },
@@ -312,7 +312,7 @@
             "common": {
                 "name": "Identify panels",
                 "type": "number",
-                "read": true,
+                "read": false,
                 "write": true,
                 "min": 0,
                 "role": "button",
