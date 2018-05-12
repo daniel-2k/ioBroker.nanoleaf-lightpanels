@@ -1,8 +1,12 @@
 {
     "common": {
         "name": "nanoleaf-lightpanels",
-        "version": "0.2.0",
+        "version": "0.3.0",
         "news": {
+        	"0.3.0": {
+                "en": "new state ColorRGB for controlling color with hex RGB value\nUpdating states from API only when value has changed\nState 'effectsList' will now be written as a semicolon seperated list to use it with 'Select ValueList' widget in ioBroker visualization\nBebug logging added\nUnits for states 'saturation' and 'hue' added",
+                "de": "Neuer Datenpunkt ColorRGB zur Seuerung der Farbe über HEX-RGB-Werte\nAktualisierung der Datenpunkte über die API nur wenn der Wert sich geändert hat\nDatenpunkt 'effectsList' wird jetzt als Semikolon-getrennte Liste geschrieben (für die Verwendung mit dem 'Select ValueList' Widget in ioBroker Visualisierung)\nDebug Logausgaben hinzugefügt\nEinheiten für die Datenpunkte 'saturation' und 'hue' hinzugefügt"
+            },
             "0.2.0": {
                 "en": "adjusted types and roles of states according API JSON response data types\ncompatible with node.js 4.x",
                 "de": "Datentypen und Rollen der Datenpunkte nach API-Referenz angepasst/korrigiert\nkompatibel mit node.js 4.x"
@@ -234,6 +238,7 @@
             "common": {
                 "name": "Hue value",
                 "type": "number",
+                "unit": "°",
                 "def": 100,
                 "min": 0,
                 "max": 360,
@@ -249,6 +254,7 @@
             "common": {
                 "name": "Saturation value",
                 "type": "number",
+                "unit": "%",
                 "def": 100,
                 "min": 0,
                 "max": 100,
@@ -284,6 +290,18 @@
                 "write": false,
                 "role": "value.color.mode",
                 "desc": "Color Mode"
+            }
+        },
+        {
+            "_id": "LightPanels.colorRGB",
+            "type": "state",
+            "common": {
+                "name": "RGB Color",
+                "type": "string",
+                "read": true,
+                "write": true,
+                "role": "level.color.rgb",
+                "desc": "Color in RGB hex format (#000000 to #FFFFFF)"
             }
         },
         {

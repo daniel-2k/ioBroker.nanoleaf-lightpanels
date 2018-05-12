@@ -5,7 +5,7 @@ const http = require('http');
 const AuroraApi = require('nanoleaf-aurora-client');
 
 // you have to require the utils module and call adapter function
-var utils =    require(__dirname + '/lib/utils'); // Get common adapter utils
+var utils = require(__dirname + '/lib/utils'); // Get common adapter utils
 
 const defaultTimeout = 10000;
 
@@ -24,70 +24,112 @@ adapter.on("unload", function (callback) {
 		StopPollingTimer();
 		StopConnectTimer();
 		callback();
-    }
-    catch (e) {
+	}
+	catch (e) {
 		callback();
-    }
+	}
 });
 
 // is called if a subscribed state changes
 adapter.on("stateChange", function (id, state) {
-    // acknowledge false for command
-    if (state && !state.ack) {    	
-    	var stateID = id.split(".");
+	if (state)
+		adapter.log.debug("State change " + ((state.ack) ? "status" : "command") + ": id: " + id + ": " + JSON.stringify(state));
+
+	// acknowledge false for command
+	if (state && !state.ack) {
+
+		var stateID = id.split(".");
 		// get Statename
 		var stateName = stateID.pop();
 		// get Devicename
 		var DeviceName = stateID.pop();
-		
+
 		if (DeviceName == "LightPanels") {
 			switch (stateName) {
 				// Power On/Off
 				case "state":		if (state.val)
 										auroraAPI.turnOn()
+											.then(function() {
+												adapter.log.debug("OpenAPI: Device turned on");
+											})
 											.catch(function(err) {
-												adapter.log.warn("Error turn on light panels, " + formatError(err));
+												adapter.log.debug("OpenAPI: Error turning on light panels, " + formatError(err));
 											});
 									else
 										auroraAPI.turnOff()
+											.then(function() {
+												adapter.log.debug("OpenAPI: Device turned off");
+											})
 											.catch(function(err) {
-												adapter.log.warn("Error turn off light panels, " + formatError(err));
+												adapter.log.debug("OpenAPI: Error turning off light panels, " + formatError(err));
 											});
 									break;
 				// Brithness
-				case "brightness":	auroraAPI.setBrightness(state.val)
+				case "brightness":	auroraAPI.setBrightness(parseInt(state.val)) // parseInt to fix vis colorPicker
+										.then(function() {
+											adapter.log.debug("OpenAPI: Brightness set to " + state.val);
+										})
 										.catch(function(err) {
-											adapter.log.warn("Error while setting brightness value " + state.val + ", " + formatError(err));
+											adapter.log.debug("OpenAPI: Error while setting brightness value " + state.val + ", " + formatError(err));
 										});
 									break;
 				// Hue
-				case "hue":			auroraAPI.setHue(state.val)
+				case "hue":			auroraAPI.setHue(parseInt(state.val)) // parseInt to fix vis colorPicker
+										.then(function() {
+											adapter.log.debug("OpenAPI: Hue set to " + state.val);
+										})
 										.catch(function(err) {
-											adapter.log.warn("Error while setting hue value " + state.val + ", " + formatError(err));
+											adapter.log.debug("OpenAPI: Error while setting hue value " + state.val + ", " + formatError(err));
 										});
 									break;
 				// Saturation
-				case "saturation":	auroraAPI.setSat(state.val)
+				case "saturation":	auroraAPI.setSat(parseInt(state.val)) // parseInt to fix vis colorPicker
+										.then(function() {
+											adapter.log.debug("OpenAPI: Saturation set to " + state.val);
+										})
 										.catch(function(err) {
-											adapter.log.warn("Error while setting saturation value " + state.val + ", " + formatError(err));
+											adapter.log.debug("OpenAPI: Error while setting saturation value " + state.val + ", " + formatError(err));
 										});
 									break;
 				// Color Temeperature
 				case "colorTemp":	auroraAPI.setColourTemperature(state.val)
+										.then(function() {
+											adapter.log.debug("OpenAPI: Color temperature set to " + state.val);
+										})
 										.catch(function(err) {
-											adapter.log.warn("Error while setting color temeperature " + state.val + ", " + formatError(err));
+											adapter.log.debug("OpenAPI: Error while setting color temeperature " + state.val + ", " + formatError(err));
 										});
+									break;
+				// RGB Color
+				case "colorRGB":	var rgb = RGBHEXtoRGBDEC(state.val);
+									if (rgb) {
+										auroraAPI.setRGB(rgb.R, rgb.G, rgb.B)
+											.then(function() {
+												adapter.log.debug("OpenAPI: RGB color set to " + state.val + " (" + rgb.R + "," + rgb.G + "," + rgb.B + ")");
+											})
+											.catch(function(err) {
+												adapter.log.debug("OpenAPI: Error while setting RGB color R=" + rgb.R + ", G=" + rgb.G + ", B=" + rgb.B + " " + formatError(err));
+											});
+									}
+									else
+										adapter.log.debug("OpenAPI: set RGB color: Supplied RGB hex string \"" + state.val + "\" is invalid!");
 									break;
 				// Current effect
 				case "effect":		auroraAPI.setEffect(state.val)
+										.then(function() {
+											adapter.log.debug("OpenAPI: Effect set to " + state.val);
+										})
 										.catch(function(err) {
-											adapter.log.warn("Error while setting effect \"" + state.val + "\", " + formatError(err));
+											adapter.log.debug("OpenAPI: Error while setting effect \"" + state.val + "\", " + formatError(err));
 										});
 									break;
 				// Indentify
 				case "identify":	auroraAPI.identify()
+										.then(function() {
+											adapter.log.debug("OpenAPI: Identify panels enabled!");
+										})
 										.catch(function(err) {
-											adapter.log.warn("Error while triggering identification, " + formatError(err));
+											adapter.log.debug("OpenAPI: Error while triggering identification, " + formatError(err));
 										});
 									break;
 			}
@@ -97,23 +139,79 @@ adapter.on("stateChange", function (id, state) {
 
 // start here!
 adapter.on("ready", function () {
-    main();
+	adapter.log.info("Nanoleaf adapter \"" + adapter.namespace + "\" started.");
+	main();
 });
 
+// convert HSV color to RGB color
+function HSVtoRGB(hue, saturation, value) {
+	var h, i, f, s, v, p, q, t, r, g, b;
+	
+	s = saturation / 100;
+	v = value / 100;
+	
+	if (s == 0) // achromatisch (Grau)
+		r = g = b = v;
+	else {
+		h = hue / 60;
+		i = Math.floor(h);
+		f = h - i;
+		p = v * (1 - s);
+		q = v * (1 - s * f);
+		t = v * (1 - s * (1 - f));
+
+		switch (i) {
+			case 0:  r = v; g = t; b = p; break;
+			case 1:  r = q; g = v; b = p; break;
+			case 2:  r = p; g = v; b = t; break;
+			case 3:  r = p; g = q; b = v; break;
+			case 4:  r = t; g = p; b = v; break;
+			default: r = v; g = p; b = q; break;
+		}
+	}
+
+	// convert to hex
+	return "#" + ("0" + (Math.round(r * 255)).toString(16)).slice(-2) +
+				 ("0" + (Math.round(g * 255)).toString(16)).slice(-2) +
+				 ("0" + (Math.round(b * 255)).toString(16)).slice(-2)
+}
+
+// convert RGB hex string to decimal RGB components object
+function RGBHEXtoRGBDEC(RGBHEX) {
+	var r, g, b;
+	var patt = new RegExp("^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$", "i");
+	var RGBDEC = new Object();
+	var res;
+		
+	if (res = patt.exec(RGBHEX.trim())) {
+		RGBDEC.R =  parseInt(res[1], 16);
+		RGBDEC.G =  parseInt(res[2], 16);
+		RGBDEC.B =  parseInt(res[3], 16);
+		
+		return RGBDEC;
+	}
+	else
+		return null;
+}
+
 function StartPollingTimer() {
+	adapter.log.debug("Polling timer startet with " + adapter.config.pollingInterval + " ms");
 	pollingTimer = setTimeout(statusUpdate, adapter.config.pollingInterval);
 }
 
 function StopPollingTimer() {
+	adapter.log.debug("Polling timer stopped!");
 	clearTimeout(pollingTimer);
 	pollingTimer = null;
 }
 
 function StartConnectTimer(isReconnect) {
+	adapter.log.debug("Connect timer startet with " + adapter.config.reconnectInterval * 1000 + " ms");
 	connectTimer = setTimeout(connect, adapter.config.reconnectInterval * 1000, isReconnect);
 }
 
 function StopConnectTimer() {
+	adapter.log.debug("Connect timer stopped!");
 	clearTimeout(connectTimer);
 	connectTimer = null;
 }
@@ -123,8 +221,18 @@ function formatError(err) {
 	
 	var message = err;
 		
-	if (Number.isInteger(err))
-		message = "HTTP error " + err;
+	if (Number.isInteger(err)) {
+		message = "HTTP status " + err;
+		switch (err) {
+			case 200: message += " (OK)"; break;
+			case 204: message += " (No Content)"; break;
+			case 400: message += " (Bad Request)"; break;
+			case 401: message += " (Unauthorized)"; break;
+			case 403: message += " (Forbidden)"; break;
+			case 404: message += " (Not Found)"; break;
+			case 422: message += " (Unprocessable Entity)"; break;
+		}
+	}
 	else {
 		if (/ECONNRESET/i.test(err.code))
 		message += " (Timeout)";
@@ -139,6 +247,7 @@ function formatError(err) {
 
 // Update states via polling
 function statusUpdate() {
+	adapter.log.debug("Updating states...");
 	auroraAPI.getInfo()
 		.then(function(info) {
 			StartPollingTimer();
@@ -146,6 +255,7 @@ function statusUpdate() {
 			writeStates(JSON.parse(info));
 		})
 		.catch(function(err) {
+			adapter.log.debug("Update states failed: " + formatError(err));
 			StopPollingTimer();
 			adapter.unsubscribeStates("*");								// unsubscribe state changes
 			adapter.setState("info.connection", false, true);			// set disconnect state
@@ -155,41 +265,85 @@ function statusUpdate() {
 }
 
 // write States
-function writeStates(states) {
-	adapter.setState("LightPanels.state", states.state.on.value, true);
-	adapter.setState("LightPanels.brightness", states.state.brightness.value, true);
-	adapter.setState("LightPanels.hue", states.state.hue.value, true);
-	adapter.setState("LightPanels.saturation", states.state.sat.value, true);
-	adapter.setState("LightPanels.colorTemp", states.state.ct.value, true);
-	adapter.setState("LightPanels.colorMode", states.state.colorMode, true);
-	adapter.setState("LightPanels.effect", states.effects.select, true);
-	adapter.setState("LightPanels.effectsList", JSON.stringify(states.effects.effectsList), true);
-	
-	adapter.setState("LightPanels.info.name", states.name, true);
-	adapter.setState("LightPanels.info.serialNo", states.serialNo, true);
-	adapter.setState("LightPanels.info.firmwareVersion", states.firmwareVersion, true);
-	adapter.setState("LightPanels.info.model", states.model, true);
-	
-	adapter.setState("Rhythm.info.connected", states.rhythm.rhythmConnected, true);
-	adapter.setState("Rhythm.info.active", states.rhythm.rhythmActive, true);
-	adapter.setState("Rhythm.info.hardwareVersion", states.rhythm.hardwareVersion, true);
-	adapter.setState("Rhythm.info.firmwareVersion", states.rhythm.firmwareVersion, true);
-	adapter.setState("Rhythm.info.auxAvailable", states.rhythm.auxAvailable, true);
-	adapter.setState("Rhythm.info.rhythmMode", states.rhythm.rhythmMode, true);
+function writeStates(newStates) {
+	adapter.log.debug("Writing new states...");
+	// read all old states
+	adapter.getStates("*", function (err, oldStates) {		
+		if (err) {
+			adapter.log.error("Error reading states: " + err + ". Update polling stopped!");
+			StopPollingTimer();		// stop polling because something is wrong
+		}
+		else {
+			setChangedState({"LightPanels.state": 				oldStates[adapter.namespace + ".LightPanels.state"]}				, newStates.state.on.value);
+			setChangedState({"LightPanels.brightness": 			oldStates[adapter.namespace + ".LightPanels.brightness"]}			, newStates.state.brightness.value);
+			setChangedState({"LightPanels.hue":					oldStates[adapter.namespace + ".LightPanels.hue"]}					, newStates.state.hue.value);
+			setChangedState({"LightPanels.saturation": 			oldStates[adapter.namespace + ".LightPanels.saturation"]}			, newStates.state.sat.value);
+			setChangedState({"LightPanels.colorTemp":			oldStates[adapter.namespace + ".LightPanels.colorTemp"]}			, newStates.state.ct.value);
+			// write RGB color only when colorMode is 'hs'
+			if (newStates.state.colorMode == "hs")
+				setChangedState({"LightPanels.colorRGB":		oldStates[adapter.namespace + ".LightPanels.colorRGB"]}				, HSVtoRGB(newStates.state.hue.value, newStates.state.sat.value, newStates.state.brightness.value));
+			setChangedState({"LightPanels.colorMode":			oldStates[adapter.namespace + ".LightPanels.colorMode"]}			, newStates.state.colorMode);
+			setChangedState({"LightPanels.effect":				oldStates[adapter.namespace + ".LightPanels.effect"]}				, newStates.effects.select);
+			// loop through effectsList and write it as semicolon seperated string
+			var effectsList = newStates.effects.effectsList;
+			var effectsListString;
+			for (var i = 0; i < effectsList.length; i++) {
+				if (effectsListString)
+					effectsListString += ";" + effectsList[i];
+				else
+					effectsListString = effectsList[i];
+			}
+			setChangedState({"LightPanels.effectsList": oldStates[adapter.namespace + ".LightPanels.effectsList"]}					, effectsListString);
+			
+			setChangedState({"LightPanels.info.name":			oldStates[adapter.namespace + ".LightPanels.info.name"]}			, newStates.name);
+			setChangedState({"LightPanels.info.serialNo":		oldStates[adapter.namespace + ".LightPanels.info.serialNo"]}		, newStates.serialNo);
+			setChangedState({"LightPanels.info.firmwareVersion":oldStates[adapter.namespace + ".LightPanels.info.firmwareVersion"]}	, newStates.firmwareVersion);
+			setChangedState({"LightPanels.info.model":			oldStates[adapter.namespace + ".LightPanels.info.model"]}			, newStates.model);
+			
+			setChangedState({"Rhythm.info.connected":			oldStates[adapter.namespace + ".Rhythm.info.connected"]}			, newStates.rhythm.rhythmConnected);
+			setChangedState({"Rhythm.info.active":				oldStates[adapter.namespace + ".Rhythm.info.active"]}				, newStates.rhythm.rhythmActive);
+			setChangedState({"Rhythm.info.hardwareVersion":		oldStates[adapter.namespace + ".Rhythm.info.hardwareVersion"]}		, newStates.rhythm.hardwareVersion);
+			setChangedState({"Rhythm.info.firmwareVersion":		oldStates[adapter.namespace + ".Rhythm.info.firmwareVersion"]}		, newStates.rhythm.firmwareVersion);
+			setChangedState({"Rhythm.info.auxAvailable":		oldStates[adapter.namespace + ".Rhythm.info.auxAvailable"]}			, newStates.rhythm.auxAvailable	);
+			setChangedState({"Rhythm.info.rhythmMode":			oldStates[adapter.namespace + ".Rhythm.info.rhythmMode"]}			, newStates.rhythm.rhythmMode);
+		}
+	});
+}
+
+// set changed state value
+function setChangedState(oldState, newStateValue) {
+	// check oldStates
+	try {
+		var stateID = Object.keys(oldState)[0];
+		// set state only when value changed or value is not acknowledged or state is null (never had a value)
+		if (oldState[stateID] == null || oldState[stateID].val != newStateValue || !oldState[stateID].ack) {
+			adapter.log.debug("Update from OpenAPI: value for state " + stateID + " changed >>>> set new value: " + newStateValue);
+			adapter.setState(stateID, newStateValue, true);
+		}
+	}
+	catch (err) {
+		var mes = "State \"" + stateID + "\" does not exist and will be ignored!";
+		adapter.log.warn(mes);
+		adapter.log.debug(mes + " " + err);
+	}
 }
 
 // write Adapter configuration (adapter restarts automatically!)
 function writeConfig() {
+	adapter.log.debug("Write adapter configuration...");
 	adapter.getForeignObject("system.adapter." + adapter.namespace, function (err, obj) {
-	    if (err) {
-	        adapter.log.error(formatError(err));
-	    }
-	    else {
-	        obj.native = adapter.config;
-	        adapter.setForeignObject(obj._id, obj, function (err) {
-	            if (err) adapter.log.error(formatError(err));
-	        });
-	    }
+		if (err) {
+			adapter.log.error("Error reading adapter config: " + formatError(err));
+		}
+		else {
+			obj.native = adapter.config;
+			adapter.setForeignObject(obj._id, obj, function (err) {
+				if (err)
+					adapter.log.error("Error writing adapter config: " + formatError(err));
+				else
+					adapter.log.debug("Writing adapter config OK.");
+			});
+		}
 	});
 }
 
@@ -203,53 +357,54 @@ function getAuthToken(address, port) {
 		path: "/api/v1/new",
 		method: "POST",
 		timeout: defaultTimeout
-	}
+	};
 	
 	const req = http.request(options, (res) => {
 		const statusCode = res.statusCode;
 		const contentType = res.headers['content-type'];
 
+		adapter.log.debug(formatError(statusCode));
+
 		switch (statusCode) {
 			case 200:	if (!/^application\/json/.test(contentType)) {
-					    	adapter.log.error("Invalid content-type. Expected \"application/json\" but received " + contentType);
-					    	return;
+							adapter.log.debug("Invalid content-type. Expected \"application/json\" but received " + contentType);
+							adapter.log.error("Error obtaining authorization token!");
+							return;
 						}
 						break;
 			case 401:	adapter.log.error("Getting authorization token failed because access is unauthorized (is the device in pairing mode?)");
 						break;
 			case 403:	adapter.log.error("Getting authorization token failed because permission denied (is the device in pairing mode?)");
 						return;
-						break;
-			default:	adapter.log.error("Connection to \"" + address + ":" + port +  "\" failed, Status Code: " + statusCode);
+			default:	adapter.log.error("Connection to \"" + address + ":" + port +  "\" failed: " + formatError(statusCode));
 						return;
 		}
 		
 		var rawData = "";
 		res.on("data", (chunk) => { rawData += chunk; });
 		res.on("end", () => {
-		    try {
+			try {
 				const parsedData = JSON.parse(rawData);
 				if (parsedData["auth_token"]) {
 					adapter.log.info("Got new Authentification Token: \"" + parsedData["auth_token"] + "\"");
 					adapter.config.authtoken = parsedData["auth_token"];
 					writeConfig();
-					return;		// Adapter restarts automatically
+					// Adapter restarts automatically
 				}
 				else {
-					adapter.log.error("JOSN response does not contain an \"auth_token\"");
-					return;
+					adapter.log.debug("JOSN response does not contain an \"auth_token\"");
+					adapter.log.error("No authorization token found!");
 				}
-		    }
-		    catch (err) {
-				adapter.log.error("Error JOSN parsing received data: " + formatError(err));
-				return;
-		    }
+			}
+			catch (err) {
+				adapter.log.debug("Error JOSN parsing received data: " + formatError(err));
+				adapter.log.error("No authorization token found!");
+			}
 		});
 	});
 	
 	req.on("error", (err) => {
 		adapter.log.error("Connection to \"" + address + ":" + port + "\" failed, " + formatError(err));
-		return;
 	});
 			
 	req.end();
@@ -266,9 +421,9 @@ function connect(isReconnect) {
 			// Update stated directly from reply
 			writeStates(JSON.parse(info));
 			// all states changes inside the adapters namespace are subscribed
-		    adapter.subscribeStates("*");
-		    // Start Status update polling
-		    StartPollingTimer();
+			adapter.subscribeStates("*");
+			// Start Status update polling
+			StartPollingTimer();
 		})
 		.catch(function(err) {
 			// is HTTP error?
@@ -292,7 +447,7 @@ function connect(isReconnect) {
 
 function init() {
 	try {
-    	auroraAPI = new AuroraApi({
+		auroraAPI = new AuroraApi({
 			host: adapter.config.host,
 			base: "/api/v1/",
 			port: adapter.config.port,
@@ -318,9 +473,6 @@ function init() {
 function main() {
 	// connection state false
 	adapter.setState("info.connection", false, true);
-	        
-    adapter.log.info("Nanoleaf adapter \"" + adapter.namespace + "\" starting...");
-    
-    // connect to nanoleaf controller and test connection
-    init();
+	// connect to nanoleaf controller and test connection
+	init();
 }
