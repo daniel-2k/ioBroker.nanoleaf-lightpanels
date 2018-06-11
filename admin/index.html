@@ -12,76 +12,136 @@
 	.description {
 		font-size: 0.8em;
 	}
+	.text-input {
+		width: 280px;
+	}
+	.num-input {
+		width: 80px;
+	}
+	.error {
+		color: #f44242;
+	}
+	.success {
+		color: #20af18;
+	}
 </style>
 <!-- you have to define 2 functions in the global scope: -->
 <script type="text/javascript">
-	// the function loadSettings has to exist ...
+	// set buttons/inputs etc.
+	function setStates() {
+		// enable/disable GetAuthToken button
+		if ($("#host").val() &&		// host must be entered
+			$("#port").val() &&		// port must be entered
+			!$("#authtoken").val())	// no authtoken entered
+		{
+			$("#getAuthToken").attr("disabled", false);
+			$("#getAuthTokenHint").removeClass().text("");
+		}
+		else $("#getAuthToken").attr("disabled", true);
+	}
 	function load(settings, onChange) {
 		if (!settings) return;
+
+		// handle value changes
+		$(".value").on("input", function() {
+			setStates();
+			onChange();		// something changed, enable save buttons
+		});
 		
-		$(".value").on("input", function() { onChange() });
-		       
 		$("#host").val(settings["host"]);
 		$("#port").val(settings["port"]);
 		$("#authtoken").val(settings["authtoken"]);
 		$("#pollingInterval").val(settings["pollingInterval"]);
 		$("#reconnectInterval").val(settings["reconnectInterval"]);
-        
-        onChange(false);
-        M.updateTextFields();  // function Materialize.updateTextFields(); to reinitialize all the Materialize labels on the page if you are dynamically adding inputs.
-    }
 
-    // ... and the function save has to exist.
-    // you have to make sure the callback is called with the settings object as first param!
-    function save(callback) {
-        var obj = {};
-        
-        obj["host"] = $("#host").val();
-        obj["port"] = $("#port").val();
-        obj["authtoken"] = $("#authtoken").val();
-        obj["pollingInterval"] = $("#pollingInterval").val();
-        obj["reconnectInterval"] = $("#reconnectInterval").val();
-        
-        callback(obj);
-    }
+		setStates();
+		onChange(false);
+
+		$("#getAuthToken").click(function() {
+			// Check if adapter is running
+			getIsAdapterAlive("nanoleaf-lightpanels", function(alive) {
+				// adapter must be running
+				if (alive) {
+					$("#getAuthToken").attr("disabled", true);	// disable button after click
+
+					var hostConfig = new Object();
+					hostConfig.host = $("#host").val();
+					hostConfig.port = $("#port").val();
+
+					sendTo("nanoleaf-lightpanels." + instance, "getAuthToken", hostConfig, function (message) {
+						if (message.success) {
+							$("#authtoken").val(message.authToken).trigger("focus");
+							$("#getAuthToken").attr("disabled", true);
+							$("#getAuthTokenHint").removeClass().addClass("success").text(translateWord("SuccessGetAuthToken"));
+							onChange();
+						}
+						else {
+							showMessage("<p>" + translateWord(message.message) + "</p>", translateWord("ErrorGetAuthTokenTitle"), "info");
+							$("#getAuthToken").attr("disabled", false);	// enable on error
+							$("#getAuthTokenHint").removeClass().text("");
+						}
+					});
+
+					$("#getAuthTokenHint").removeClass().text(translateWord("ObtainAuthTokenWait"));
+				}
+				else
+					showMessage("<p>" + translateWord("AdapterNotAlive") + "</p>", translateWord("AdapterStateTitle"), "info");
+			});
+		});
+	}
+
+	function save(callback) {
+		var obj = {};
+		
+		obj["host"] = $("#host").val();
+		obj["port"] = $("#port").val();
+		obj["authtoken"] = $("#authtoken").val();
+		obj["pollingInterval"] = $("#pollingInterval").val();
+		obj["reconnectInterval"] = $("#reconnectInterval").val();
+		
+		callback(obj);
+	}
 </script>
 
-<!-- you have to put your config page in a div with id adapter-container -->
 <div id="adapter-container" width="100%">
-    <table>
-    	<tr>
-        	<td><img src="nanoleaf-lightpanels.png" width="64" height="64"/></td>
-        	<td><h3 class="translate">nanoleaf Light Panels Adapter settings</h3></td>
-        </tr>
+	<table>
+		<tr>
+			<td><img src="nanoleaf-lightpanels.png" width="64" height="64"/></td>
+			<td><h3 class="translate">AdapterSettings</h3></td>
+		</tr>
 	</table>
 	<table>
-    	<tr>
-        	<td width="25%"><label for="host" class="translate">Host/IP address</label></td>
-        	<td width="25%"><input type="text" class="value" id="host"></td>	
-        	<td width="50%"><span class="translate description">Hostname or IP address of nanoleaf Light Panels controller</span></td>
-        </tr>
-        <tr>
-        	<td><label for="port" class="translate">Port</label></td>
-			<td><input type="number" class="value" id="port" value="16021" /></td>
-			<td><span class="translate description">HTTP port of nanoleaf Light Panels controller</span></td>
-        </tr>
-        <tr>
-        	<td><label for="authtoken" class="translate">Authentification token</label></td>
-			<td><input type="text" class="value" id="authtoken" ></td>
-			<td><span class="translate description">Authentification token for nanoleaf Light Panels OpenAPI</span></td>
-        </tr>
-    	<tr>
-        	<td><label for="pollingInterval" class="translate">Polling interval</label></td>
-			<td><input type="number" class="value" id="pollingInterval" min="500" max="600000"/></td>
-			<td><span class="translate description">Interval in ms for status update polling</span></td>
-        </tr>
-    	<tr>
-        	<td><label for="reconnectInterval" class="translate">Polling interval</label></td>
-			<td><input type="number" class="value" id="reconnectInterval" min="10" max="21600"/></td>
-			<td><span class="translate description">Interval in ms for status update polling</span></td>
-        </tr>
+		<tr>
+			<td width="25%"><label for="host" class="translate">HostIP</label></td>
+			<td width="35%"><input type="text" class="value text-input" id="host"></td>
+			<td width="40%"><span class="translate description">HostIPDesc</span></td>
+		</tr>
+		<tr>
+			<td><label for="port" class="translate">Port</label></td>
+			<td><input type="number" class="value num-input" id="port" value="16021"></td>
+			<td><span class="translate description">PortDesc</span></td>
+		</tr>
+		<tr>
+			<td valign="top"><label for="authtoken" class="translate">AuthToken</label></td>
+			<td valign="top">
+				<p><input type="text" class="value text-input" id="authtoken" ></p>
+				<p><button id="getAuthToken" disabled><span class="translate">GetAuthToken</span></button></p>
+				<p class="description"><span id="getAuthTokenHint"></span></p>
+			</td>
+			<td><span class="translate description">AuthTokenDesc</span></td>
+		</tr>
+		<tr>
+			<td><label for="pollingInterval" class="translate">PollingInterval</label></td>
+			<td><input type="number" class="value num-input" id="pollingInterval" min="500" max="600000"/></td>
+			<td><span class="translate description">PollingIntervalDesc</span></td>
+		</tr>
+		<tr>
+			<td><label for="reconnectInterval" class="translate">ReconnectInterval</label></td>
+			<td><input type="number" class="value num-input" id="reconnectInterval" min="10" max="21600"/></td>
+			<td><span class="translate description">ReconnectIntervalDesc</span></td>
+		</tr>
 	</table>
-	<p class="translate">On save adapter restarts with new config immediately</p>
+	<p class="translate">OnSaveRestartHint</p>
 </div>
 
 </html>

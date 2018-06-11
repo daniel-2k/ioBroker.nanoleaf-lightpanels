@@ -1,6 +1,6 @@
 {
   "name": "iobroker.nanoleaf-lightpanels",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "ioBroker Adapter to control the nanoleaf Light Panels",
   "author": {
     "name": "daniel_2k",
@@ -17,6 +17,7 @@
   "keywords": [
 	"nanoleaf",
 	"light panels",
+	"aurora",
 	"light",
 	"led",
 	"rgb"
@@ -26,7 +27,7 @@
     "url": "https://github.com/daniel-2k/ioBroker.nanoleaf-lightpanels"
   },
   "dependencies": {
-    "nanoleaf-aurora-client": "^1.1.8"
+    "nanoleaf-aurora-client": "^1.2.2"
   },
   "devDependencies": {
     "gulp": "^3.9.1",

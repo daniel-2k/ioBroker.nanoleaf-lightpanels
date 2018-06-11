@@ -10,13 +10,12 @@
 This is an ioBroker Adapter to control the nanoleaf Light Panels (formerly nanoleaf Aurora) through the nanoleaf Light Panels OpenAPI.
 
 ## Connection to the nanoleaf Light Panels Controller:
-1. In the adapter settings you can set the IP address and port of the nanoleaf Light Panels Controller. The nanoleaf Light Panels OpenAPI needs an authorization token to grant access to the REST-API. If you have already one, you can enter the token here.
-   If you don't have an authorization token you need to request it from the nanoleaf Light Panels OpenAPI.
-   The adapter can do this automatically when starting (see 2.).
-2. Set the nanoleaf Light Panel Controller into pairing mode by pressing the power button for 5-7 seconds until the white LED flashes.
-3. Start the adapter within 30 seconds.
-   The adapter will now try to obtain an authorization token automatically. You will see it in the log whether this was successful.
-   The indicator of the adapter should switch from yellow to green when the adapter is connected to nanoleaf Light Panels Controller.
+1. In the adapter settings you have to set the IP address and port of the nanoleaf Light Panels Controller. The nanoleaf Light Panels OpenAPI needs an authorization token to grant access to the REST-API. If you have already one, you can enter the token here and skip the next step.
+2. If you don't have an authorization token you need to request it from the nanoleaf Light Panels OpenAPI.
+   To do this, set the nanoleaf Light Panel Controller into pairing mode by pressing and holding the power button at the device for 5-7 seconds until the LEDs flash alternately.
+   Then click on the button 'Obtain authorization token' within 30 seconds (pairing mode stops after 30 seconds). The adapter must be running!
+   If it was successfull the authorization token should be seen in the field 'Authentification token'. If an error occured you get a pop up with the error message (details you can see in the log).
+3. Save the settings.
 4. Have fun!
 
 Because the nanoleaf Light Panels OpenAPI doesn't support long polling or websockets the only way to update the states is polling.
@@ -40,6 +39,12 @@ To control and visualize the color you have to install the color picker style Wi
 You can use the nanoleaf vis demo project found in the /vis subfolder on github.
 
 ## Changelog
+
+### 0.4.0 (2018-06-11)
+* (daniel_2k) changed: Authorization token will be obtained now in the adapter settings (not on adapter start)
+* (daniel_2k) fixed: some texts in the old adapter settings (Admin2)
+* (daniel_2k) new: State 'effect' now contains all possible states (auto updated)
+* (daniel_2k) changed: updated AuroraAPI version to 1.2.2
 
 ### 0.3.0 (2018-05-12)
 * (daniel_2k) new: state "ColorRGB" for controlling color with hex RGB values

@@ -7,6 +7,7 @@ const AuroraApi = require('nanoleaf-aurora-client');
 // you have to require the utils module and call adapter function
 var utils = require(__dirname + '/lib/utils'); // Get common adapter utils
 
+const effectObjName = "LightPanels.effect";
 const defaultTimeout = 10000;
 
 var auroraAPI;	// Instance of auroraAPI-Client
@@ -27,6 +28,28 @@ adapter.on("unload", function (callback) {
 	}
 	catch (e) {
 		callback();
+	}
+});
+
+// Some message was sent to adapter instance
+adapter.on("message", function (obj) {
+	adapter.log.debug("Incoming adapter message: " + obj.command);
+
+	switch (obj.command) {
+		case "getAuthToken":	getAuthToken(obj.message.host, obj.message.port, function (success, message) {
+									var messageObj = new Object();
+									messageObj.success = success;
+
+									if (success) {
+										messageObj.message = "SuccessGetAuthToken";
+										messageObj.authToken = message;
+									}
+									else messageObj.message = message;
+
+									if (obj.callback) adapter.sendTo(obj.from, obj.command, messageObj, obj.callback);
+								});
+								break;
+		default:				adapter.log.debug("Invalid adapter message send: " + obj);
 	}
 });
 
@@ -117,7 +140,7 @@ adapter.on("stateChange", function (id, state) {
 				// Current effect
 				case "effect":		auroraAPI.setEffect(state.val)
 										.then(function() {
-											adapter.log.debug("OpenAPI: Effect set to " + state.val);
+											adapter.log.debug("OpenAPI: Effect set to \"" + state.val + "\"");
 										})
 										.catch(function(err) {
 											adapter.log.debug("OpenAPI: Error while setting effect \"" + state.val + "\", " + formatError(err));
@@ -284,16 +307,32 @@ function writeStates(newStates) {
 				setChangedState({"LightPanels.colorRGB":		oldStates[adapter.namespace + ".LightPanels.colorRGB"]}				, HSVtoRGB(newStates.state.hue.value, newStates.state.sat.value, newStates.state.brightness.value));
 			setChangedState({"LightPanels.colorMode":			oldStates[adapter.namespace + ".LightPanels.colorMode"]}			, newStates.state.colorMode);
 			setChangedState({"LightPanels.effect":				oldStates[adapter.namespace + ".LightPanels.effect"]}				, newStates.effects.select);
-			// loop through effectsList and write it as semicolon seperated string
-			var effectsList = newStates.effects.effectsList;
-			var effectsListString;
-			for (var i = 0; i < effectsList.length; i++) {
-				if (effectsListString)
-					effectsListString += ";" + effectsList[i];
+			var effectsArray = newStates.effects.effectsList;
+			var effectsList;
+			var effectsStates = new Object();
+			// loop through effectsList and write it as semicolon separated string and new states object
+			for (var i = 0; i < effectsArray.length; i++) {
+				if (effectsList)
+					effectsList += ";" + effectsArray[i];
 				else
-					effectsListString = effectsList[i];
+					effectsList = effectsArray[i];
+				effectsStates[effectsArray[i]] = effectsArray[i];
 			}
-			setChangedState({"LightPanels.effectsList": oldStates[adapter.namespace + ".LightPanels.effectsList"]}					, effectsListString);
+			setChangedState({"LightPanels.effectsList": 		oldStates[adapter.namespace + ".LightPanels.effectsList"]}			, effectsList);
+			// updating states of effect if changed
+			adapter.getObject(effectObjName, function (err, obj) {
+				if (err) adapter.log.debug("Error getting \"" + effectObject + "\": " + err);
+				else {
+					// only if list has changed
+					if (JSON.stringify(effectsStates) != JSON.stringify(obj.common.states)) {
+						adapter.log.debug("Update from OpenAPI: possible states for state \"effect\" changed >>>> set new states: " + JSON.stringify(effectsArray));
+						obj.common.states = effectsStates;
+						adapter.setObject(effectObjName, obj, function (err) {
+							if (err) adapter.log.debug("Error getting \"" + effectObjName + "\": " + err)
+						});
+					}
+				}
+			});
 			
 			setChangedState({"LightPanels.info.name":			oldStates[adapter.namespace + ".LightPanels.info.name"]}			, newStates.name);
 			setChangedState({"LightPanels.info.serialNo":		oldStates[adapter.namespace + ".LightPanels.info.serialNo"]}		, newStates.serialNo);
@@ -317,7 +356,7 @@ function setChangedState(oldState, newStateValue) {
 		var stateID = Object.keys(oldState)[0];
 		// set state only when value changed or value is not acknowledged or state is null (never had a value)
 		if (oldState[stateID] == null || oldState[stateID].val != newStateValue || !oldState[stateID].ack) {
-			adapter.log.debug("Update from OpenAPI: value for state " + stateID + " changed >>>> set new value: " + newStateValue);
+			adapter.log.debug("Update from OpenAPI: value for state \"" + stateID + "\" changed >>>> set new value: " + newStateValue);
 			adapter.setState(stateID, newStateValue, true);
 		}
 	}
@@ -328,27 +367,8 @@ function setChangedState(oldState, newStateValue) {
 	}
 }
 
-// write Adapter configuration (adapter restarts automatically!)
-function writeConfig() {
-	adapter.log.debug("Write adapter configuration...");
-	adapter.getForeignObject("system.adapter." + adapter.namespace, function (err, obj) {
-		if (err) {
-			adapter.log.error("Error reading adapter config: " + formatError(err));
-		}
-		else {
-			obj.native = adapter.config;
-			adapter.setForeignObject(obj._id, obj, function (err) {
-				if (err)
-					adapter.log.error("Error writing adapter config: " + formatError(err));
-				else
-					adapter.log.debug("Writing adapter config OK.");
-			});
-		}
-	});
-}
-
 // automatically obtain an auth token when device is in pairing mode
-function getAuthToken(address, port) {
+function getAuthToken(address, port, callback) {
 	adapter.log.info("Try to obtain authorization token from \"" + address + ":" + port + "\" (device has to be in pairing mode!)");
 	
 	const options = {
@@ -369,14 +389,18 @@ function getAuthToken(address, port) {
 			case 200:	if (!/^application\/json/.test(contentType)) {
 							adapter.log.debug("Invalid content-type. Expected \"application/json\" but received " + contentType);
 							adapter.log.error("Error obtaining authorization token!");
+							if (callback) callback(false, "ErrorJSON");
 							return;
 						}
 						break;
 			case 401:	adapter.log.error("Getting authorization token failed because access is unauthorized (is the device in pairing mode?)");
-						break;
+						if (callback) callback(false, "ErrorUnauthorized");
+						return;
 			case 403:	adapter.log.error("Getting authorization token failed because permission denied (is the device in pairing mode?)");
+						if (callback) callback(false, "ErrorUnauthorized");
 						return;
 			default:	adapter.log.error("Connection to \"" + address + ":" + port +  "\" failed: " + formatError(statusCode));
+						if (callback) callback(false, "ErrorConnection");
 						return;
 		}
 		
@@ -387,24 +411,25 @@ function getAuthToken(address, port) {
 				const parsedData = JSON.parse(rawData);
 				if (parsedData["auth_token"]) {
 					adapter.log.info("Got new Authentification Token: \"" + parsedData["auth_token"] + "\"");
-					adapter.config.authtoken = parsedData["auth_token"];
-					writeConfig();
-					// Adapter restarts automatically
+					if (callback) callback(true, parsedData["auth_token"]);
 				}
 				else {
 					adapter.log.debug("JOSN response does not contain an \"auth_token\"");
 					adapter.log.error("No authorization token found!");
+					if (callback) callback(false, "NoAuthTokenFound");
 				}
 			}
 			catch (err) {
 				adapter.log.debug("Error JOSN parsing received data: " + formatError(err));
 				adapter.log.error("No authorization token found!");
+				if (callback) callback(false, "NoAuthTokenFound");
 			}
 		});
 	});
 	
 	req.on("error", (err) => {
 		adapter.log.error("Connection to \"" + address + ":" + port + "\" failed, " + formatError(err));
+		if (callback) callback(false, "ErrorConnection");
 	});
 			
 	req.end();
@@ -460,12 +485,7 @@ function init() {
 		connect();
 	}
 	catch(err) {
-		// authorization token missing?
-		if (/missing.*accesstoken/i.test(err)) {
-			adapter.log.warn("No authorization token specified");
-			getAuthToken(adapter.config.host, adapter.config.port);
-		}
-		else adapter.log.error(err);
+		adapter.log.error(err);
 	}
 
 }

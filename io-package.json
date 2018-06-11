@@ -1,15 +1,19 @@
 {
     "common": {
         "name": "nanoleaf-lightpanels",
-        "version": "0.3.0",
+        "version": "0.4.0",
         "news": {
+        	"0.4.0": {
+                "en": "Authorization token will be obtained now in the adapter settings (not on adapter start).<br>Fixed some texts in the old adapter settings (Admin2).<br>State 'effect' now contains all possible states (auto updated).<br>updated AuroraAPI version to 1.2.2",
+                "de": "Authentifizierungs-Token wird nun über die Adapter-Einstellungen angefordert (nicht mehr automatisch beim Adapterstart).<br>Fehler in Texten auf der alten Adapter-Einstellungsseite (Admin2) behoben.<br>Datenpunkt 'effect' enthält nun alle möglichen Werte (mit automatischer Aktualisierung).<br>AuroraAPI Version auf 1.2.2 aktualisiert"
+            },
         	"0.3.0": {
-                "en": "new state ColorRGB for controlling color with hex RGB value\nUpdating states from API only when value has changed\nState 'effectsList' will now be written as a semicolon seperated list to use it with 'Select ValueList' widget in ioBroker visualization\nBebug logging added\nUnits for states 'saturation' and 'hue' added",
-                "de": "Neuer Datenpunkt ColorRGB zur Seuerung der Farbe über HEX-RGB-Werte\nAktualisierung der Datenpunkte über die API nur wenn der Wert sich geändert hat\nDatenpunkt 'effectsList' wird jetzt als Semikolon-getrennte Liste geschrieben (für die Verwendung mit dem 'Select ValueList' Widget in ioBroker Visualisierung)\nDebug Logausgaben hinzugefügt\nEinheiten für die Datenpunkte 'saturation' und 'hue' hinzugefügt"
+                "en": "New state ColorRGB for controlling color with hex RGB value.<br>Updating states from API only when value has changed.<br>State 'effectsList' will now be written as a semicolon seperated list to use it with 'Select ValueList' widget in ioBroker visualization.<br>Debug logging added.<br>Units for states 'saturation' and 'hue' added.",
+                "de": "Neuer Datenpunkt ColorRGB zur Seuerung der Farbe über HEX-RGB-Werte.<br>Aktualisierung der Datenpunkte über die API nur wenn der Wert sich geändert hat.<br>Datenpunkt 'effectsList' wird jetzt als Semikolon-getrennte Liste geschrieben (für die Verwendung mit dem 'Select ValueList' Widget in ioBroker Visualisierung).<br>Debug Logausgaben hinzugefügt.<br>Einheiten für die Datenpunkte 'saturation' und 'hue' hinzugefügt."
             },
             "0.2.0": {
-                "en": "adjusted types and roles of states according API JSON response data types\ncompatible with node.js 4.x",
-                "de": "Datentypen und Rollen der Datenpunkte nach API-Referenz angepasst/korrigiert\nkompatibel mit node.js 4.x"
+                "en": "Adjusted types and roles of states according API JSON response data types.<br>compatible with node.js 4.x.",
+                "de": "Datentypen und Rollen der Datenpunkte nach API-Referenz angepasst/korrigiert.<br>kompatibel mit node.js 4.x."
             },
             "0.1.0": {
                 "en": "initial version",
@@ -34,12 +38,14 @@
         "keywords": [
             "nanoleaf",
             "light panels",
+            "aurora",
             "light",
             "led",
             "rgb"
         ],
         "readme": "https://github.com/daniel-2k/ioBroker.nanoleaf-lightpanels/blob/master/README.md",
         "loglevel": "info",
+        "messagebox": true,
         "type": "lighting"
     },
     "native": {
@@ -313,6 +319,7 @@
                 "read": true,
                 "write": true,
                 "role": "text",
+                "states": [],
                 "desc": "Current effect"
             }
         },

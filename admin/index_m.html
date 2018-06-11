@@ -4,10 +4,16 @@
 <link rel="stylesheet" type="text/css" href="../../css/adapter.css"/>
 <style>
 	.m .col .select-wrapper+label {
-		top: -26px;  
+		top: -26px;
 	}
-	.m span{
+	.m span {
 		font-size: 0.9em;
+	}
+	.error {
+		color: #f44242;
+	}
+	.success {
+		color: #20af18;
 	}
 </style>
 
@@ -17,94 +23,143 @@
 <script type="text/javascript" src="../../lib/js/materialize.js"></script>
 <script type="text/javascript" src="../../js/adapter-settings.js"></script>
 <script type="text/javascript" src="words.js"></script>
-<!-- you have to define 2 functions in the global scope: -->
+
 <script type="text/javascript">
-	// the function loadSettings has to exist ...
+	// set buttons/inputs etc.
+	function setStates() {
+		// enable/disable GetAuthToken button
+		if ($("#host").val() &&		// host must be entered
+			$("#port").val() &&		// port must be entered
+			!$("#authtoken").val())	// no authtoken entered
+		{
+			$("#getAuthToken").attr("disabled", false);
+			$("#getAuthTokenHint").removeClass().text("");
+		}
+		else $("#getAuthToken").attr("disabled", true);
+	}
+
 	function load(settings, onChange) {
 		if (!settings) return;
+
+		// handle value changes
+		$(".value").on("input", function() {
+			setStates()
+			onChange();		// something changed, enable save buttons
+		});
 		
-		$(".value").on("input", function() { onChange() });
-		       
 		$("#host").val(settings["host"]);
 		$("#port").val(settings["port"]);
 		$("#authtoken").val(settings["authtoken"]);
 		$("#pollingInterval").val(settings["pollingInterval"]);
 		$("#reconnectInterval").val(settings["reconnectInterval"]);
-        
-        onChange(false);
-        M.updateTextFields();  // function Materialize.updateTextFields(); to reinitialize all the Materialize labels on the page if you are dynamically adding inputs.
-    }
 
-    // ... and the function save has to exist.
-    // you have to make sure the callback is called with the settings object as first param!
-    function save(callback) {
-        var obj = {};
-        
-        obj["host"] = $("#host").val();
-        obj["port"] = $("#port").val();
-        obj["authtoken"] = $("#authtoken").val();
-        obj["pollingInterval"] = $("#pollingInterval").val();
-        obj["reconnectInterval"] = $("#reconnectInterval").val();
-        
-        callback(obj);
-    }
+		setStates();
+		onChange(false);
+		M.updateTextFields();	// function Materialize.updateTextFields(); to reinitialize all the Materialize labels on the page if you are dynamically adding inputs.
+
+		$("#getAuthToken").click(function() {
+			// Check if adapter is running
+			getIsAdapterAlive("nanoleaf-lightpanels", function(alive) {
+				// adapter must be running
+				if (alive) {
+					$("#getAuthToken").attr("disabled", true);	// disable button after click
+
+					var hostConfig = new Object();
+					hostConfig.host = $("#host").val();
+					hostConfig.port = $("#port").val();
+
+					sendTo("nanoleaf-lightpanels." + instance, "getAuthToken", hostConfig, function (message) {
+						if (message.success) {
+							$("#authtoken").val(message.authToken).trigger("focus");
+							$("#getAuthToken").attr("disabled", true);
+							$("#getAuthTokenHint").removeClass().addClass("success").text(translateWord("SuccessGetAuthToken"));
+							onChange();
+						}
+						else {
+							showMessage("<p>" + translateWord(message.message) + "</p>", translateWord("ErrorGetAuthTokenTitle"), "info");
+							$("#getAuthToken").attr("disabled", false);	// enable on error
+							$("#getAuthTokenHint").removeClass().text("");
+						}
+					});
+
+					$("#getAuthTokenHint").removeClass().text(translateWord("ObtainAuthTokenWait"));
+				}
+				else
+					showMessage("<p>" + translateWord("AdapterNotAlive") + "</p>", translateWord("AdapterStateTitle"), "info");
+			});
+		});
+	}
+
+	function save(callback) {
+		var obj = {};
+		
+		obj["host"] = $("#host").val();
+		obj["port"] = $("#port").val();
+		obj["authtoken"] = $("#authtoken").val();
+		obj["pollingInterval"] = $("#pollingInterval").val();
+		obj["reconnectInterval"] = $("#reconnectInterval").val();
+		
+		callback(obj);
+	}
+
 </script>
 </head>
 <body>
-    <!-- you have to put your config page in a div with id adapter-container -->
-    <div class="m adapter-container">
-    	<div class="row">
-	        <div class="col s12">
-	            <ul class="tabs">
-	                <li class="tab col s2"><a href="#tab-main"     class="translate active">Main settings</a></li>
-	                <li class="tab col s2"><a href="#tab-advanced" class="translate">Additional settings</a></li>
-	            </ul>
-	        </div>
-	        <div id="tab-main" class="col s12 page">
-	            <div class="row">
-	                <div class="input-field col s6 m6 l6">
-	                    <img src="nanoleaf-lightpanels.png" class="logo">
-	                </div>
-	            </div>
-	            <div class="row">
-	                <div class="input-field col s12 m6 l3">
-	                    <input type="text" class="value" id="host">
-	                    <label for="host" class="translate">Host/IP address</label>
-	                    <span class="translate">Hostname or IP address of nanoleaf Light Panels controller</span>
-	                </div>
-	                <div class="input-field col s12 m6 l3">
-	                    <input type="number" class="value" id="port" value="16021" />
-	                    <label for="port" class="translate">Port</label>
-	                    <span class="translate">HTTP port of nanoleaf Light Panels controller</span>
-	                </div>
-	                <div class="input-field col s12 m12 l6">
-	                    <input type="text" class="value" id="authtoken" >
-	                    <label for="authtoken" class="translate">Authentification token</label>
-	                    <span class="translate">Authentification token for nanoleaf Light Panels OpenAPI</span>
-	                </div>
-	           </div>
-	           <div class="row">
-	                <div class="col s12">
-	                    <p class="translate">On save adapter restarts with new config immediately</p>
-	                </div>
-	           </div>
-		    </div>
-		    <div id="tab-advanced" class="col s12 page">
-		    	<div class="row">
-					<div class="input-field col s12 m12 l12">
-		        		<input type="number" class="value" id="pollingInterval" min="500" max="600000"/>
-		            	<label for="pollingInterval" class="translate">Polling interval</label>
-		            	<span class="translate">Interval in ms for status update polling</span>
-		            </div>
-					<div class="input-field col s12 m12 l12">
-		        		<input type="number" class="value" id="reconnectInterval" min="10" max="21600"/>
-		            	<label for="reconnectInterval" class="translate">Reconnect interval</label>
-		            	<span class="translate">Interval in seconds for reconnection attempts</span>
+	<div class="m adapter-container">
+		<div class="row">
+			<div class="col s12">
+				<ul class="tabs">
+					<li class="tab col s2"><a href="#tab-main"     class="translate active">MainSettings</a></li>
+					<li class="tab col s2"><a href="#tab-advanced" class="translate">AdditionalSettings</a></li>
+				</ul>
+			</div>
+			<div id="tab-main" class="col s12 page">
+				<div class="row">
+					<div class="input-field col s6 m6 l6">
+						<img src="nanoleaf-lightpanels.png" class="logo">
 					</div>
 				</div>
-	    	</div>
-	    </div>
-    </div>
+				<div class="row">
+					<div class="input-field col s12 m6 l3">
+						<input type="text" class="value" id="host">
+						<label for="host" class="translate">HostIP</label>
+						<span class="translate">HostIPDesc</span>
+					</div>
+					<div class="input-field col s12 m6 l3">
+						<input type="number" class="value" id="port" value="16021" />
+						<label for="port" class="translate">Port</label>
+						<span class="translate">PortDesc</span>
+					</div>
+					<div class="input-field col s12 m12 l6">
+						<input type="text" class="value" id="authtoken" >
+						<label for="authtoken" class="translate">AuthToken</label>
+						<span class="translate">AuthTokenDesc</span>
+						<p><a class="waves-effect waves-light btn" id="getAuthToken" disabled><span class="translate">GetAuthToken</span></a>
+							<span id="getAuthTokenHint"></span></p>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col s12">
+						<p class="translate">OnSaveRestartHint</p>
+					</div>
+				</div>
+			</div>
+			<div id="tab-advanced" class="col s12 page">
+				<div class="row">
+					<div class="input-field col s12 m12 l12">
+						<input type="number" class="value" id="pollingInterval" min="500" max="600000"/>
+						<label for="pollingInterval" class="translate">PollingInterval</label>
+						<span class="translate">PollingIntervalDesc</span>
+					</div>
+					<div class="input-field col s12 m12 l12">
+						<input type="number" class="value" id="reconnectInterval" min="10" max="21600"/>
+						<label for="reconnectInterval" class="translate">ReconnectInterval</label>
+						<span class="translate">ReconnectIntervalDesc</span>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 </body>
 
 </html>
