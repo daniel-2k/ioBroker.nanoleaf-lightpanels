@@ -1,8 +1,12 @@
 {
     "common": {
         "name": "nanoleaf-lightpanels",
-        "version": "0.4.0",
+        "version": "0.4.1",
         "news": {
+        	"0.4.1": {
+                "en": "added automatic testing via Travis and Appveyor<br>preparations for official repository",
+                "de": "automatisierte Test via Travis and Appveyor hinzugefügt<br>Vorbereitung für offizielles Repository"
+            },
         	"0.4.0": {
                 "en": "Authorization token will be obtained now in the adapter settings (not on adapter start).<br>Fixed some texts in the old adapter settings (Admin2).<br>State 'effect' now contains all possible states (auto updated).<br>updated AuroraAPI version to 1.2.2",
                 "de": "Authentifizierungs-Token wird nun über die Adapter-Einstellungen angefordert (nicht mehr automatisch beim Adapterstart).<br>Fehler in Texten auf der alten Adapter-Einstellungsseite (Admin2) behoben.<br>Datenpunkt 'effect' enthält nun alle möglichen Werte (mit automatischer Aktualisierung).<br>AuroraAPI Version auf 1.2.2 aktualisiert"
