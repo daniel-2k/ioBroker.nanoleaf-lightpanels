@@ -45,7 +45,13 @@
 		// handle value changes
 		$(".value").on("input", function() {
 			setStates();
-			onChange();		// something changed, enable save buttons
+			
+			// something changed, enable save buttons when all fields are filled
+			if ($("#host").val() &&		// host must be entered
+			    $("#port").val() &&		// port must be entered
+			    $("#authtoken").val())	// authtoken must be entered
+				onChange(true);
+			else onChange(false);
 		});
 		
 		$("#host").val(settings["host"]);
@@ -73,7 +79,7 @@
 							$("#authtoken").val(message.authToken).trigger("focus");
 							$("#getAuthToken").attr("disabled", true);
 							$("#getAuthTokenHint").removeClass().addClass("success").text(translateWord("SuccessGetAuthToken"));
-							onChange();
+							onChange(true);
 						}
 						else {
 							showMessage("<p>" + translateWord(message.message) + "</p>", translateWord("ErrorGetAuthTokenTitle"), "info");

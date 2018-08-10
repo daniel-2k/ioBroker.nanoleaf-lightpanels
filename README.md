@@ -32,15 +32,23 @@ You have to set up the datapoints
 * saturation (for color)
 * brightness (for color)
 * colorTemp (for color temperature)
+
 in Cloud adapter under the same smartname.
 
 ## ioBroker Visualization
-The nanoleaf Light Panels can be controlled in ioBroker Visualization by using basic widgets as "Radiobuttons on/off" or sliders for controlling the power sate, the brightness, hue, stuaration and color temperature states.
+The nanoleaf Light Panels can be controlled in ioBroker Visualization by using basic widgets as "Radiobuttons on/off" or sliders for controlling the power sate, the brightness, hue, saturation and color temperature states.
 For effects you can use the "Select ValueList" widget to use it as a drop down list and then map the effectsList state to the value and text property of the widget (type: "{nanoleaf-lightpanels.0.LightPanels.effectsList}" -> the curly braces are important!)
 To control and visualize the color you have to install the color picker style Widgets. You can map the RGB ID to the colorRGB state or use the three HSV states as well.
 You can use the nanoleaf vis demo project found in the /vis subfolder on github.
 
 ## Changelog
+
+### 0.5.0 (2018-08-10)
+* (daniel_2k) changed: automatically reconnect attemps will be done in any case of connection failures (fixes no reconnect when device hung and was restarted)
+* (daniel_2k) new: default minimum values for polling intervals in adapter
+* (daniel_2k) new: static effects 'Solid' and 'Dynamic' added to effect states
+* (daniel_2k) changed: save settings in admin is only possible when all fields filled
+* (daniel_2k) changed: optimized debug logging
 
 ### 0.4.1 (2018-07-13)
 * (daniel_2k) added automatic testing via Travis and Appveyor

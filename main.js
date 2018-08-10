@@ -3,6 +3,8 @@
 'use strict';
 const http = require('http');
 const AuroraApi = require('nanoleaf-aurora-client');
+const minPollingInterval = 500; // milliseconds
+const minReconnectInterval = 10;	// seconds
 
 // you have to require the utils module and call adapter function
 var utils = require(__dirname + '/lib/utils'); // Get common adapter utils
@@ -11,6 +13,8 @@ const effectObjName = "LightPanels.effect";
 const defaultTimeout = 10000;
 
 var auroraAPI;	// Instance of auroraAPI-Client
+var lastError;	// keeps the last error occured
+
 // Timers
 var pollingTimer;
 var connectTimer;
@@ -218,8 +222,11 @@ function RGBHEXtoRGBDEC(RGBHEX) {
 }
 
 function StartPollingTimer() {
-	adapter.log.debug("Polling timer startet with " + adapter.config.pollingInterval + " ms");
-	pollingTimer = setTimeout(statusUpdate, adapter.config.pollingInterval);
+	var interval = adapter.config.pollingInterval;
+	if (interval < minPollingInterval) interval = minPollingInterval;	// override when intervall is to small
+	
+	adapter.log.debug("Polling timer startet with " + interval + " ms");
+	pollingTimer = setTimeout(statusUpdate, interval);
 }
 
 function StopPollingTimer() {
@@ -229,8 +236,11 @@ function StopPollingTimer() {
 }
 
 function StartConnectTimer(isReconnect) {
-	adapter.log.debug("Connect timer startet with " + adapter.config.reconnectInterval * 1000 + " ms");
-	connectTimer = setTimeout(connect, adapter.config.reconnectInterval * 1000, isReconnect);
+	var interval = adapter.config.reconnectInterval;
+	if (interval < minReconnectInterval) interval = minReconnectInterval;	// override when intervall is to small
+	
+	adapter.log.debug("Connect timer startet with " + interval * 1000 + " ms");
+	connectTimer = setTimeout(connect, interval * 1000, isReconnect);
 }
 
 function StopConnectTimer() {
@@ -283,6 +293,7 @@ function statusUpdate() {
 			adapter.unsubscribeStates("*");								// unsubscribe state changes
 			adapter.setState("info.connection", false, true);			// set disconnect state
 			adapter.log.warn("Connection to \"" + auroraAPI.host + ":" + auroraAPI.port + "\" lost, " + formatError(err) + ". Try to reconnect...");
+			lastError = err;													// save last error
 			StartConnectTimer(true);									// start connect timer
 		});
 }
@@ -309,7 +320,7 @@ function writeStates(newStates) {
 			setChangedState({"LightPanels.effect":				oldStates[adapter.namespace + ".LightPanels.effect"]}				, newStates.effects.select);
 			var effectsArray = newStates.effects.effectsList;
 			var effectsList;
-			var effectsStates = new Object();
+			var effectsStates = new Object({"*Solid*": "Solid", "*Dynamic*": "Dynamic"});
 			// loop through effectsList and write it as semicolon separated string and new states object
 			for (var i = 0; i < effectsArray.length; i++) {
 				if (effectsList)
@@ -451,21 +462,18 @@ function connect(isReconnect) {
 			StartPollingTimer();
 		})
 		.catch(function(err) {
-			// is HTTP error?
-			if (Number.isInteger(err) && (err < 200 || err > 299)) {
-				// special error message and no further connection attemps
-				var addMessage = "";
-				if (err == 401) addMessage = "Permission denied, please check authorization token!";
-				else addMessage = "Please check hostname/IP and device!";
-				adapter.log.error("Connection to \"" + auroraAPI.host + ":" + auroraAPI.port + "\" failed, " + formatError(err) + ". " + addMessage);
+			var message = "Please check hostname/IP, device and connection!";
+			// is HTTP error then special error messages
+			if (Number.isInteger(err) && (err == 401 || err == 403)) message = "Permission denied, please check authorization token!"; 
+
+			adapter.log.debug("Reconnect to \"" + auroraAPI.host + ":" + auroraAPI.port + "\" failed with " + formatError(err));
+			
+			// log only if error changed
+			if (lastError === undefined || err.code != lastError.code) {
+				adapter.log.error("Connection to \"" + auroraAPI.host + ":" + auroraAPI.port + "\" failed, " + formatError(err) + ". Retry in " + adapter.config.reconnectInterval + "s intervals...");
+				lastError = err;
 			}
-			// everything else
-			else {
-				// log only if timer not running
-				if (!connectTimer)
-					adapter.log.error("Connection to \"" + auroraAPI.host + ":" + auroraAPI.port + "\" failed, " + formatError(err) + ". Retry in " + adapter.config.reconnectInterval + "s intervals...");
-				StartConnectTimer(isReconnect);		// start reconnect timer
-			}
+			StartConnectTimer(isReconnect);		// start reconnect timer
 	});
 }
 
@@ -487,7 +495,6 @@ function init() {
 	catch(err) {
 		adapter.log.error(err);
 	}
-
 }
 
 function main() {

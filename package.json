@@ -1,7 +1,7 @@
 {
   "name": "iobroker.nanoleaf-lightpanels",
-  "version": "0.4.1",
-  "description": "ioBroker Adapter to control the nanoleaf Light Panels",
+  "version": "0.5.0",
+  "description": "ioBroker Adapter to control the nanoleaf Light Panels (fomerly nanoleaf Aurora)",
   "author": {
     "name": "daniel_2k",
     "email": "daniel_2k@outlook.com"
