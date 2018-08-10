@@ -1,17 +1,23 @@
 /* jshint -W097 */// jshint strict:false
 /*jslint node: true */
-'use strict';
-const http = require('http');
-const AuroraApi = require('nanoleaf-aurora-client');
-const minPollingInterval = 500; // milliseconds
-const minReconnectInterval = 10;	// seconds
+"use strict";
 
 // you have to require the utils module and call adapter function
 var utils = require(__dirname + '/lib/utils'); // Get common adapter utils
 
+// adapter will be restarted automatically every time as the configuration changed, e.g system.adapter.nanoleaf-lightpanels.0
+var adapter = new utils.Adapter("nanoleaf-lightpanels");
+
+// constants
+const http = require('http');
+const AuroraApi = require('nanoleaf-aurora-client');
+const minPollingInterval = 500;		// milliseconds
+const minReconnectInterval = 10;	// seconds
+
 const effectObjName = "LightPanels.effect";
 const defaultTimeout = 10000;
 
+// variables
 var auroraAPI;	// Instance of auroraAPI-Client
 var lastError;	// keeps the last error occured
 
@@ -19,8 +25,9 @@ var lastError;	// keeps the last error occured
 var pollingTimer;
 var connectTimer;
 
-// adapter will be restarted automatically every time as the configuration changed, e.g system.adapter.nanoleaf-lightpanels.0
-var adapter = new utils.Adapter('nanoleaf-lightpanels');
+var pollingInterval;
+var reconnectInterval;
+
 
 // is called when adapter shuts down - callback has to be called under any circumstances!
 adapter.on("unload", function (callback) {
@@ -222,11 +229,7 @@ function RGBHEXtoRGBDEC(RGBHEX) {
 }
 
 function StartPollingTimer() {
-	var interval = adapter.config.pollingInterval;
-	if (interval < minPollingInterval) interval = minPollingInterval;	// override when intervall is to small
-	
-	adapter.log.debug("Polling timer startet with " + interval + " ms");
-	pollingTimer = setTimeout(statusUpdate, interval);
+	pollingTimer = setTimeout(statusUpdate, pollingInterval);
 }
 
 function StopPollingTimer() {
@@ -236,11 +239,7 @@ function StopPollingTimer() {
 }
 
 function StartConnectTimer(isReconnect) {
-	var interval = adapter.config.reconnectInterval;
-	if (interval < minReconnectInterval) interval = minReconnectInterval;	// override when intervall is to small
-	
-	adapter.log.debug("Connect timer startet with " + interval * 1000 + " ms");
-	connectTimer = setTimeout(connect, interval * 1000, isReconnect);
+	connectTimer = setTimeout(connect, reconnectInterval * 1000, isReconnect);
 }
 
 function StopConnectTimer() {
@@ -280,27 +279,25 @@ function formatError(err) {
 
 // Update states via polling
 function statusUpdate() {
-	adapter.log.debug("Updating states...");
 	auroraAPI.getInfo()
 		.then(function(info) {
-			StartPollingTimer();
+			StartPollingTimer();	// restart polling timer for next update
 			// update States
 			writeStates(JSON.parse(info));
 		})
 		.catch(function(err) {
-			adapter.log.debug("Update states failed: " + formatError(err));
+			adapter.log.debug("Updating states failed: " + formatError(err));
 			StopPollingTimer();
 			adapter.unsubscribeStates("*");								// unsubscribe state changes
 			adapter.setState("info.connection", false, true);			// set disconnect state
 			adapter.log.warn("Connection to \"" + auroraAPI.host + ":" + auroraAPI.port + "\" lost, " + formatError(err) + ". Try to reconnect...");
-			lastError = err;													// save last error
+			lastError = err;
 			StartConnectTimer(true);									// start connect timer
 		});
 }
 
 // write States
 function writeStates(newStates) {
-	adapter.log.debug("Writing new states...");
 	// read all old states
 	adapter.getStates("*", function (err, oldStates) {		
 		if (err) {
@@ -460,6 +457,7 @@ function connect(isReconnect) {
 			adapter.subscribeStates("*");
 			// Start Status update polling
 			StartPollingTimer();
+			adapter.log.debug("Polling timer startet with " + pollingInterval + " ms");
 		})
 		.catch(function(err) {
 			var message = "Please check hostname/IP, device and connection!";
@@ -474,12 +472,20 @@ function connect(isReconnect) {
 				lastError = err;
 			}
 			StartConnectTimer(isReconnect);		// start reconnect timer
+			adapter.log.debug("Connect timer startet with " + reconnectInterval * 1000 + " ms");
 	});
 }
 
 
 function init() {
 	try {
+		// initialize timer intervals (override when intervall is to small)
+		if (adapter.config.pollingInterval < minPollingInterval) pollingInterval = minPollingInterval;
+		else pollingInterval = adapter.config.pollingInterval;
+		if (adapter.config.reconnectInterval < minReconnectInterval) reconnectInterval = minReconnectInterval;
+		else reconnectInterval = adapter.config.reconnectInterval;
+		
+		// initialize Aurora API
 		auroraAPI = new AuroraApi({
 			host: adapter.config.host,
 			base: "/api/v1/",
