@@ -1,8 +1,12 @@
 {
     "common": {
         "name": "nanoleaf-lightpanels",
-        "version": "0.5.0",
+        "version": "0.6.0",
         "news": {
+        	"0.6.0": {
+                "en": "processing commands in sequence (FIFO) ensuring that all commands are executed and avoiding hanging of the nanoleaf-controller sometimes",
+                "de": "Verarbeitung der Befehle nacheinander (FIFO) um sicherzustellen, dass alle Befehle ausgeführt werden und um teilweises Aufhängen des nanoleaf-Controllers zu verhindern"
+            },
         	"0.5.0": {
                 "en": "automatically reconnect attemps in any case (fixes no reconnect when device hung and was restarted)<br>default minimum values for polling intervals in adapter<br>static effects 'Solid' and 'Dynamic' added to effect states<br>Saving settings in admin is only possible when all fields filled<br>optimized debug logging",
                 "de": "automatische Wiederverbindungsversuche werden jetzt immer durchgeführt (behebt keine Wiederverbindung, wenn Gerät sich aufhängt und neugestartet wird)<br>Standard Minium-Werte für Polling-Intervalle im Adapter<br>statische Effekte 'Solid' und 'Dynamic' zu den effect-States hinzugefügt<br>Einstellungen in Admin speichern nur möglich wenn alle Felder gefüllt<br>Debug-Logging optimiert"

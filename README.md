@@ -43,6 +43,9 @@ You can use the nanoleaf vis demo project found in the /vis subfolder on github.
 
 ## Changelog
 
+### 0.6.0 (2018-09-02)
+* (daniel_2k) changed: processing commands in sequence (FIFO) ensuring that all commands are executed and avoiding hanging of the nanoleaf-controller sometimes
+
 ### 0.5.0 (2018-08-10)
 * (daniel_2k) changed: automatically reconnect attemps will be done in any case of connection failures (fixes no reconnect when device hung and was restarted)
 * (daniel_2k) new: default minimum values for polling intervals in adapter
