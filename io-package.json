@@ -359,7 +359,6 @@
                 "type": "boolean",
                 "read": false,
                 "write": true,
-                "min": 0,
                 "role": "button",
                 "desc": "Causes the panels to flash in unison"
             }
