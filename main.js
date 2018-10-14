@@ -85,7 +85,7 @@ adapter.on("stateChange", function (id, state) {
 
 			// start processing commands when not in progress
 			if (!commandQueueProcessing) {
-				adapter.log.debug("Start processing commands...")
+				adapter.log.debug("Start processing commands...");
 				processCommandQueue();
 			}
 		}
@@ -98,7 +98,7 @@ function processCommandQueue() {
 
 	if (!nextCommand) {
 		commandQueueProcessing = false;
-		adapter.log.debug("No further commands in queue. Processing finished.")
+		adapter.log.debug("No further commands in queue. Processing finished.");
 		return;
 	}
 	var stateName = nextCommand.stateName;
@@ -115,7 +115,7 @@ function processCommandQueue() {
 										adapter.log.debug("OpenAPI: Device turned on");
 									})
 									.catch(function(err) {
-										adapter.log.debug("OpenAPI: Error turning on light panels, " + formatError(err));
+										logApiError("OpenAPI: Error turning on light panels", err);
 									})
 									.then(function() {
 										processCommandQueue();
@@ -126,7 +126,7 @@ function processCommandQueue() {
 										adapter.log.debug("OpenAPI: Device turned off");
 									})
 									.catch(function(err) {
-										adapter.log.debug("OpenAPI: Error turning off light panels, " + formatError(err));
+										logApiError("OpenAPI: Error turning off light panels", err);
 									})
 									.then(function() {
 										processCommandQueue();
@@ -138,7 +138,7 @@ function processCommandQueue() {
 									adapter.log.debug("OpenAPI: Brightness set to " + state.val);
 								})
 								.catch(function(err) {
-									adapter.log.debug("OpenAPI: Error while setting brightness value " + state.val + ", " + formatError(err));
+									logApiError("OpenAPI: Error while setting brightness value " + state.val, err);
 								})
 								.then(function() {
 									processCommandQueue();
@@ -150,11 +150,11 @@ function processCommandQueue() {
 									adapter.log.debug("OpenAPI: Hue set to " + state.val);
 								})
 								.catch(function(err) {
-									adapter.log.debug("OpenAPI: Error while setting hue value " + state.val + ", " + formatError(err));
+									logApiError("OpenAPI: Error while setting hue value " + state.val, err);
 								})
 								.then(function() {
-									;processCommandQueue();
-								})
+									processCommandQueue();
+								});
 							break;
 		// Saturation
 		case "saturation":	auroraAPI.setSat(parseInt(state.val)) // parseInt to fix vis colorPicker
@@ -162,7 +162,7 @@ function processCommandQueue() {
 									adapter.log.debug("OpenAPI: Saturation set to " + state.val);
 								})
 								.catch(function(err) {
-									adapter.log.debug("OpenAPI: Error while setting saturation value " + state.val + ", " + formatError(err));
+									logApiError("OpenAPI: Error while setting saturation value " + state.val, err);
 								})
 								.then(function() {
 									processCommandQueue();
@@ -174,7 +174,7 @@ function processCommandQueue() {
 									adapter.log.debug("OpenAPI: Color temperature set to " + state.val);
 								})
 								.catch(function(err) {
-									adapter.log.debug("OpenAPI: Error while setting color temeperature " + state.val + ", " + formatError(err));
+									logApiError("OpenAPI: Error while setting color temeperature " + state.val, err);
 								})
 								.then(function() {
 									processCommandQueue();
@@ -188,14 +188,16 @@ function processCommandQueue() {
 										adapter.log.debug("OpenAPI: RGB color set to " + state.val + " (" + rgb.R + "," + rgb.G + "," + rgb.B + ")");
 									})
 									.catch(function(err) {
-										adapter.log.debug("OpenAPI: Error while setting RGB color R=" + rgb.R + ", G=" + rgb.G + ", B=" + rgb.B + " " + formatError(err));
+										logApiError("OpenAPI: Error while setting RGB color R=" + rgb.R + ", G=" + rgb.G + ", B=" + rgb.B, err);
 									})
 									.then(function() {
 										processCommandQueue();
 									});
 							}
-							else
-								adapter.log.debug("OpenAPI: set RGB color: Supplied RGB hex string \"" + state.val + "\" is invalid!");
+							else {
+								adapter.log.error("OpenAPI: set RGB color: Supplied RGB hex string \"" + state.val + "\" is invalid!");
+								processCommandQueue();
+							}
 							break;
 		// Current effect
 		case "effect":		auroraAPI.setEffect(state.val)
@@ -203,7 +205,7 @@ function processCommandQueue() {
 									adapter.log.debug("OpenAPI: Effect set to \"" + state.val + "\"");
 								})
 								.catch(function(err) {
-									adapter.log.debug("OpenAPI: Error while setting effect \"" + state.val + "\", " + formatError(err));
+									logApiError("OpenAPI: Error while setting effect \"" + state.val + "\"", err);
 								})
 								.then(function() {
 									processCommandQueue();
@@ -215,7 +217,7 @@ function processCommandQueue() {
 									adapter.log.debug("OpenAPI: Identify panels enabled!");
 								})
 								.catch(function(err) {
-									adapter.log.debug("OpenAPI: Error while triggering identification, " + formatError(err));
+									logApiError("OpenAPI: Error while triggering identification", err);
 								})
 								.then(function() {
 									processCommandQueue();
@@ -272,7 +274,6 @@ function HSVtoRGB(hue, saturation, value) {
 
 // convert RGB hex string to decimal RGB components object
 function RGBHEXtoRGBDEC(RGBHEX) {
-	var r, g, b;
 	var patt = new RegExp("^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$", "i");
 	var RGBDEC = new Object();
 	var res;
@@ -336,6 +337,14 @@ function formatError(err) {
 	return message;
 }
 
+// loggin of actions via API. Only bad requests (invalid data supplied) logs error, all other only in debug
+function logApiError(msg, err) {
+	var errormsg = msg + ", " + formatError(err);
+	
+	if (Number.isInteger(err) && err == 400)
+		adapter.log.error(errormsg);
+	else adapter.log.debug(errormsg);
+}
 
 // Update states via polling
 function statusUpdate() {
@@ -525,11 +534,11 @@ function connect(isReconnect) {
 			// is HTTP error then special error messages
 			if (Number.isInteger(err) && (err == 401 || err == 403)) message = "Permission denied, please check authorization token!"; 
 
-			adapter.log.debug("Reconnect to \"" + auroraAPI.host + ":" + auroraAPI.port + "\" failed with " + formatError(err));
+			adapter.log.debug("Reconnect to \"" + auroraAPI.host + ":" + auroraAPI.port + "\" failed with " + formatError(err) + ", " + message);
 			
 			// log only if error changed
 			if (lastError === undefined || err.code != lastError.code) {
-				adapter.log.error("Connection to \"" + auroraAPI.host + ":" + auroraAPI.port + "\" failed, " + formatError(err) + ". Retry in " + adapter.config.reconnectInterval + "s intervals...");
+				adapter.log.error("Connection to \"" + auroraAPI.host + ":" + auroraAPI.port + "\" failed, " + formatError(err) + ", " + message + ". Retry in " + adapter.config.reconnectInterval + "s intervals...");
 				lastError = err;
 			}
 			StartConnectTimer(isReconnect);		// start reconnect timer

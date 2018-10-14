@@ -43,6 +43,11 @@ You can use the nanoleaf vis demo project found in the /vis subfolder on github.
 
 ## Changelog
 
+### 0.6.1 (2018-10-13)
+* (daniel_2k) fixed: command processing stopping when invalid RGB value is written to 'colorRGB'
+* (daniel_2k) changed: more error logging of invalid values send to controller
+* (daniel_2k) changed: adjusted types and roles
+
 ### 0.6.0 (2018-09-02)
 * (daniel_2k) changed: processing commands in sequence (FIFO) ensuring that all commands are executed and avoiding hanging of the nanoleaf-controller sometimes
 

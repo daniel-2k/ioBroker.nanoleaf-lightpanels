@@ -1,8 +1,12 @@
 {
     "common": {
         "name": "nanoleaf-lightpanels",
-        "version": "0.6.0",
+        "version": "0.6.1",
         "news": {
+        	"0.6.1": {
+                "en": "fixed command processing stopping when invalid RGB value is written to 'colorRGB'<br>more error logging of invalid values send to controller<br>adjusted types and roles",
+                "de": "Stoppen der Befehlsverarbeitung gefixt, wenn ungültiger RGB-Wert auf 'colorRGB' geschrieben wird<br>Mehr Error-Logging bei Senden ungültiger Werte an Controller<br>Rollen und Typen angepasst"
+            },
         	"0.6.0": {
                 "en": "processing commands in sequence (FIFO) ensuring that all commands are executed and avoiding hanging of the nanoleaf-controller sometimes",
                 "de": "Verarbeitung der Befehle nacheinander (FIFO) um sicherzustellen, dass alle Befehle ausgeführt werden und um teilweises Aufhängen des nanoleaf-Controllers zu verhindern"
@@ -230,7 +234,7 @@
                 "def": false,
                 "read": true,
                 "write": true,
-                "role": "switch",
+                "role": "switch.light",
                 "desc": "Switch on/off"
             }
         },
@@ -352,7 +356,7 @@
             "type": "state",
             "common": {
                 "name": "Identify panels",
-                "type": "number",
+                "type": "boolean",
                 "read": false,
                 "write": true,
                 "min": 0,
