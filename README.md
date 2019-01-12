@@ -43,6 +43,11 @@ You can use the nanoleaf vis demo project found in the /vis subfolder on github.
 
 ## Changelog
 
+### 0.7.0 (2019-01-12)
+* (daniel_2k) fixed: now compatible with nanoleaf Canvas (error with rhythm module detection, because Canvas has builtin Rhythm module)
+* (daniel_2k) changed: Rhythm module information is now obtained depended if it is connected or not (only Light Panels)
+* (daniel_2k) changed: some small adjustments
+
 ### 0.6.1 (2018-10-13)
 * (daniel_2k) fixed: command processing stopping when invalid RGB value is written to 'colorRGB'
 * (daniel_2k) changed: more error logging of invalid values send to controller

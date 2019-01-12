@@ -1,8 +1,12 @@
 {
     "common": {
         "name": "nanoleaf-lightpanels",
-        "version": "0.6.1",
+        "version": "0.7.0",
         "news": {
+            "0.7.0": {
+                "en": "fixed error to be compatible with nanoleaf Canvas<br>Rhythm module information is now obtained depended if it is connected or not (only Light Panels)<br>some small adjustments",
+                "de": "Fix für Kompatibilität mit nanoleaf Canvas<br>Rhythm Modul Informationen werden in Abhängigkeit des Verbindungsstatus ermittelt (nur Light Panels)<br>kleine Anpassungen"
+            },
         	"0.6.1": {
                 "en": "fixed command processing stopping when invalid RGB value is written to 'colorRGB'<br>more error logging of invalid values send to controller<br>adjusted types and roles",
                 "de": "Stoppen der Befehlsverarbeitung gefixt, wenn ungültiger RGB-Wert auf 'colorRGB' geschrieben wird<br>Mehr Error-Logging bei Senden ungültiger Werte an Controller<br>Rollen und Typen angepasst"
@@ -38,8 +42,8 @@
         },
         "title": "nanoleaf Light Panels Adapter",
         "desc": {
-            "en": "Controlling the nanoleaf Light Panels (fomerly nanoleaf Aurora) in ioBroker",
-            "de": "Steuerung der nanoleaf Light Panels (fomerly nanoleaf Aurora) in ioBroker"
+            "en": "Controlling the nanoleaf Light Panels/Canvas (fomerly nanoleaf Aurora) in ioBroker",
+            "de": "Steuerung der nanoleaf Light Panels/Canvas (fomerly nanoleaf Aurora) in ioBroker"
         },
         "authors": [
             "daniel_2k <daniel_2k@outlook.com>"
@@ -54,6 +58,7 @@
         "keywords": [
             "nanoleaf",
             "light panels",
+            "canvas",
             "aurora",
             "light",
             "led",
@@ -81,7 +86,8 @@
                 "write": false,
                 "def": false,
                 "role": "indicator.connected"
-            }
+            },
+            "native": {}
         },
         {
             "_id": "LightPanels",
@@ -89,7 +95,8 @@
             "common": {
                 "name": "Light Panels Device",
                 "icon": "/icons/lightpanels.png"
-            }
+            },
+            "native": {}
         },
         {
             "_id": "LightPanels.info",
@@ -97,23 +104,8 @@
             "common": {
                 "name": "Light Panels Device Information",
                 "icon": "/icons/lightpanels.png"
-            }
-        },
-        {
-            "_id": "Rhythm",
-            "type": "device",
-            "common": {
-                "name": "Light Panels Rhythm Module Device",
-                "icon": "/icons/rhythm.png"
-            }
-        },
-        {
-            "_id": "Rhythm.info",
-            "type": "channel",
-            "common": {
-                "name": "Light Panels Rhythm Module Device Information",
-                "icon": "/icons/rhythm.png"
-            }
+            },
+            "native": {}
         },
         {
             "_id": "LightPanels.info.name",
@@ -124,7 +116,8 @@
                 "read": true,
                 "write": false,
                 "role": "info.name"
-            }
+            },
+            "native": {}
         },
         {
             "_id": "LightPanels.info.serialNo",
@@ -135,7 +128,8 @@
                 "read": true,
                 "write": false,
                 "role": "info.serial"
-            }
+            },
+            "native": {}
         },
         {
             "_id": "LightPanels.info.firmwareVersion",
@@ -146,7 +140,8 @@
                 "read": true,
                 "write": false,
                 "role": "info.version"
-            }
+            },
+            "native": {}
         },
         {
             "_id": "LightPanels.info.model",
@@ -157,73 +152,8 @@
                 "read": true,
                 "write": false,
                 "role": "info.model"
-            }
-        },
-        {
-            "_id": "Rhythm.info.connected",
-            "type": "state",
-            "common": {
-                "name": "Rhythm module connected to nanoleaf light panels",
-                "type": "boolean",
-                "read": true,
-                "write": false,
-                "role": "indicator.connected"
-            }
-        },
-        {
-            "_id": "Rhythm.info.active",
-            "type": "state",
-            "common": {
-                "name": "Rhythm module active",
-                "type": "boolean",
-                "read": true,
-                "write": false,
-                "role": "indicator"
-            }
-        },
-        {
-            "_id": "Rhythm.info.hardwareVersion",
-            "type": "state",
-            "common": {
-                "name": "Hardware Version of rhythm module",
-                "type": "string",
-                "read": true,
-                "write": false,
-                "role": "info.version.hw"
-            }
-        },
-        {
-            "_id": "Rhythm.info.firmwareVersion",
-            "type": "state",
-            "common": {
-                "name": "Firmware Version of ryhtm module",
-                "type": "string",
-                "read": true,
-                "write": false,
-                "role": "info.version"
-            }
-        },
-        {
-            "_id": "Rhythm.info.auxAvailable",
-            "type": "state",
-            "common": {
-                "name": "AUX of rhythm module available",
-                "type": "boolean",
-                "read": true,
-                "write": false,
-                "role": "indicator"
-            }
-        },
-        {
-            "_id": "Rhythm.info.rhythmMode",
-            "type": "state",
-            "common": {
-                "name": "Mode of rhythm module",
-                "type": "number",
-                "read": true,
-                "write": false,
-                "role": "value"
-            }
+            },
+            "native": {}
         },
         {
             "_id": "LightPanels.state",
@@ -236,7 +166,8 @@
                 "write": true,
                 "role": "switch.light",
                 "desc": "Switch on/off"
-            }
+            },
+            "native": {}
         },
         {
             "_id": "LightPanels.brightness",
@@ -252,7 +183,8 @@
                 "write": true,
                 "role": "level.dimmer",
                 "desc": "Brightness level in %"
-            }
+            },
+            "native": {}
         },
         {
             "_id": "LightPanels.hue",
@@ -268,7 +200,8 @@
                 "write": true,
                 "role": "level.color.hue",
                 "desc": "Hue value"
-            }
+            },
+            "native": {}
         },
         {
             "_id": "LightPanels.saturation",
@@ -284,7 +217,8 @@
                 "write": true,
                 "role": "level.color.saturation",
                 "desc": "Saturation value"
-            }
+            },
+            "native": {}
         },
         {
             "_id": "LightPanels.colorTemp",
@@ -300,7 +234,8 @@
                 "write": true,
                 "role": "level.color.temperature",
                 "desc": "Color Temperature"
-            }
+            },
+            "native": {}
         },
         {
             "_id": "LightPanels.colorMode",
@@ -312,7 +247,8 @@
                 "write": false,
                 "role": "value.color.mode",
                 "desc": "Color Mode"
-            }
+            },
+            "native": {}
         },
         {
             "_id": "LightPanels.colorRGB",
@@ -324,7 +260,8 @@
                 "write": true,
                 "role": "level.color.rgb",
                 "desc": "Color in RGB hex format (#000000 to #FFFFFF)"
-            }
+            },
+            "native": {}
         },
         {
             "_id": "LightPanels.effect",
@@ -337,7 +274,8 @@
                 "role": "text",
                 "states": [],
                 "desc": "Current effect"
-            }
+            },
+            "native": {}
         },
         {
             "_id": "LightPanels.effectsList",
@@ -349,7 +287,8 @@
                 "write": false,
                 "role": "text",
                 "desc": "List of available effects"
-            }
+            },
+            "native": {}
         },
         {
             "_id": "LightPanels.identify",
@@ -361,7 +300,8 @@
                 "write": true,
                 "role": "button",
                 "desc": "Causes the panels to flash in unison"
-            }
+            },
+            "native": {}
         }
     ]
 }

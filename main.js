@@ -375,16 +375,16 @@ function writeStates(newStates) {
 			StopPollingTimer();		// stop polling because something is wrong
 		}
 		else {
-			setChangedState({"LightPanels.state": 				oldStates[adapter.namespace + ".LightPanels.state"]}				, newStates.state.on.value);
-			setChangedState({"LightPanels.brightness": 			oldStates[adapter.namespace + ".LightPanels.brightness"]}			, newStates.state.brightness.value);
-			setChangedState({"LightPanels.hue":					oldStates[adapter.namespace + ".LightPanels.hue"]}					, newStates.state.hue.value);
-			setChangedState({"LightPanels.saturation": 			oldStates[adapter.namespace + ".LightPanels.saturation"]}			, newStates.state.sat.value);
-			setChangedState({"LightPanels.colorTemp":			oldStates[adapter.namespace + ".LightPanels.colorTemp"]}			, newStates.state.ct.value);
+			setChangedState("LightPanels.state", 		oldStates[adapter.namespace + ".LightPanels.state"]		, newStates.state.on.value);
+			setChangedState("LightPanels.brightness", 	oldStates[adapter.namespace + ".LightPanels.brightness"], newStates.state.brightness.value);
+			setChangedState("LightPanels.hue",			oldStates[adapter.namespace + ".LightPanels.hue"]		, newStates.state.hue.value);
+			setChangedState("LightPanels.saturation", 	oldStates[adapter.namespace + ".LightPanels.saturation"], newStates.state.sat.value);
+			setChangedState("LightPanels.colorTemp",	oldStates[adapter.namespace + ".LightPanels.colorTemp"]	, newStates.state.ct.value);
 			// write RGB color only when colorMode is 'hs'
 			if (newStates.state.colorMode == "hs")
-				setChangedState({"LightPanels.colorRGB":		oldStates[adapter.namespace + ".LightPanels.colorRGB"]}				, HSVtoRGB(newStates.state.hue.value, newStates.state.sat.value, newStates.state.brightness.value));
-			setChangedState({"LightPanels.colorMode":			oldStates[adapter.namespace + ".LightPanels.colorMode"]}			, newStates.state.colorMode);
-			setChangedState({"LightPanels.effect":				oldStates[adapter.namespace + ".LightPanels.effect"]}				, newStates.effects.select);
+				setChangedState("LightPanels.colorRGB",	oldStates[adapter.namespace + ".LightPanels.colorRGB"]	, HSVtoRGB(newStates.state.hue.value, newStates.state.sat.value, newStates.state.brightness.value));
+			setChangedState("LightPanels.colorMode",	oldStates[adapter.namespace + ".LightPanels.colorMode"]	, newStates.state.colorMode);
+			setChangedState("LightPanels.effect",		oldStates[adapter.namespace + ".LightPanels.effect"]	, newStates.effects.select);
 			var effectsArray = newStates.effects.effectsList;
 			var effectsList;
 			var effectsStates = new Object({"*Solid*": "Solid", "*Dynamic*": "Dynamic"});
@@ -396,7 +396,7 @@ function writeStates(newStates) {
 					effectsList = effectsArray[i];
 				effectsStates[effectsArray[i]] = effectsArray[i];
 			}
-			setChangedState({"LightPanels.effectsList": 		oldStates[adapter.namespace + ".LightPanels.effectsList"]}			, effectsList);
+			setChangedState("LightPanels.effectsList", 	oldStates[adapter.namespace + ".LightPanels.effectsList"], effectsList);
 			// updating states of effect if changed
 			adapter.getObject(effectObjName, function (err, obj) {
 				if (err) adapter.log.debug("Error getting \"" + effectObject + "\": " + err);
@@ -412,28 +412,54 @@ function writeStates(newStates) {
 				}
 			});
 			
-			setChangedState({"LightPanels.info.name":			oldStates[adapter.namespace + ".LightPanels.info.name"]}			, newStates.name);
-			setChangedState({"LightPanels.info.serialNo":		oldStates[adapter.namespace + ".LightPanels.info.serialNo"]}		, newStates.serialNo);
-			setChangedState({"LightPanels.info.firmwareVersion":oldStates[adapter.namespace + ".LightPanels.info.firmwareVersion"]}	, newStates.firmwareVersion);
-			setChangedState({"LightPanels.info.model":			oldStates[adapter.namespace + ".LightPanels.info.model"]}			, newStates.model);
-			
-			setChangedState({"Rhythm.info.connected":			oldStates[adapter.namespace + ".Rhythm.info.connected"]}			, newStates.rhythm.rhythmConnected);
-			setChangedState({"Rhythm.info.active":				oldStates[adapter.namespace + ".Rhythm.info.active"]}				, newStates.rhythm.rhythmActive);
-			setChangedState({"Rhythm.info.hardwareVersion":		oldStates[adapter.namespace + ".Rhythm.info.hardwareVersion"]}		, newStates.rhythm.hardwareVersion);
-			setChangedState({"Rhythm.info.firmwareVersion":		oldStates[adapter.namespace + ".Rhythm.info.firmwareVersion"]}		, newStates.rhythm.firmwareVersion);
-			setChangedState({"Rhythm.info.auxAvailable":		oldStates[adapter.namespace + ".Rhythm.info.auxAvailable"]}			, newStates.rhythm.auxAvailable	);
-			setChangedState({"Rhythm.info.rhythmMode":			oldStates[adapter.namespace + ".Rhythm.info.rhythmMode"]}			, newStates.rhythm.rhythmMode);
+			setChangedState("LightPanels.info.name",			oldStates[adapter.namespace + ".LightPanels.info.name"]				, newStates.name);
+			setChangedState("LightPanels.info.serialNo",		oldStates[adapter.namespace + ".LightPanels.info.serialNo"]			, newStates.serialNo);
+			setChangedState("LightPanels.info.firmwareVersion", oldStates[adapter.namespace + ".LightPanels.info.firmwareVersion"]	, newStates.firmwareVersion);
+			setChangedState("LightPanels.info.model",			oldStates[adapter.namespace + ".LightPanels.info.model"]			, newStates.model);
+
+			// Rhythm module only available with nanoleaf Light-Panals, Canvas has built in module and here we get no info about Rhythm
+			if (typeof newStates.rhythm === "object") {
+				let oldConnectedState = oldStates[adapter.namespace + ".Rhythm.info.connected"];
+				let newConnectedState = newStates.rhythm.rhythmConnected;
+
+				setChangedState("Rhythm.info.connected", oldConnectedState, newConnectedState);
+
+				// current connected state is true
+				if (newConnectedState) {
+					// last connection state was false -> create states
+					if (!oldConnectedState || (oldConnectedState && !oldConnectedState.val)) {
+						adapter.log.info("Rhythm module attached!");
+						adapter.log.debug("Creating Rhythm states...");
+						CreateRhythmStates();
+					};
+
+					// update states
+					setChangedState("Rhythm.info.active",			oldStates[adapter.namespace + ".Rhythm.info.active"],			newStates.rhythm.rhythmActive);
+					setChangedState("Rhythm.info.hardwareVersion",	oldStates[adapter.namespace + ".Rhythm.info.hardwareVersion"],	newStates.rhythm.hardwareVersion);
+					setChangedState("Rhythm.info.firmwareVersion",	oldStates[adapter.namespace + ".Rhythm.info.firmwareVersion"],	newStates.rhythm.firmwareVersion);
+					setChangedState("Rhythm.info.auxAvailable",		oldStates[adapter.namespace + ".Rhythm.info.auxAvailable"],		newStates.rhythm.auxAvailable);
+					setChangedState("Rhythm.info.rhythmMode",		oldStates[adapter.namespace + ".Rhythm.info.rhythmMode"],		newStates.rhythm.rhythmMode);
+				}
+				// module is not connected anymore
+				else {
+					// last connection state was true -> delete states
+					if (oldConnectedState && oldConnectedState.val) {
+						adapter.log.info("Rhythm module detached!");
+						adapter.log.debug("Deleting Rhythm states...");
+						DeleteRhythmStates()
+					}
+				};
+			}
 		}
 	});
 }
 
 // set changed state value
-function setChangedState(oldState, newStateValue) {
+function setChangedState(stateID, oldState, newStateValue) {
 	// check oldStates
 	try {
-		var stateID = Object.keys(oldState)[0];
 		// set state only when value changed or value is not acknowledged or state is null (never had a value)
-		if (oldState[stateID] == null || oldState[stateID].val != newStateValue || !oldState[stateID].ack) {
+		if (oldState == null || oldState.val != newStateValue || !oldState.ack) {
 			adapter.log.debug("Update from OpenAPI: value for state \"" + stateID + "\" changed >>>> set new value: " + newStateValue);
 			adapter.setState(stateID, newStateValue, true);
 		}
@@ -513,6 +539,128 @@ function getAuthToken(address, port, callback) {
 	req.end();
 }
 
+// Creates Rhythm info states
+function CreateRhythmStates() {
+	// create "active" state
+	adapter.createState("Rhythm", "info", "active",
+		{
+			"name": "Rhythm module active",
+			"type": "boolean",
+			"read": true,
+			"write": false,
+			"role": "indicator"
+		},
+		{}
+	);
+	// create "auxAvailable" state
+	adapter.createState("Rhythm", "info" , "auxAvailable",
+		{
+			"name": "AUX of rhythm module available",
+			"type": "boolean",
+			"read": true,
+			"write": false,
+			"role": "indicator"
+		},
+		{}
+	);
+	// create "firmwareVersion" state
+	adapter.createState("Rhythm", "info", "firmwareVersion",
+		{
+			"name": "Firmware Version of rhyhtm module",
+			"type": "string",
+			"read": true,
+			"write": false,
+			"role": "info.version"
+		},
+		{}
+	);
+	// create "hardwareVersion" state
+	adapter.createState("Rhythm", "info", "hardwareVersion",
+		{
+			"name": "Hardware Version of rhythm module",
+			"type": "string",
+			"read": true,
+			"write": false,
+			"role": "info.version.hw"
+		},
+		{}
+	);
+	// create "rhythmMode" state
+	adapter.createState("Rhythm", "info" , "rhythmMode",
+		{
+			"name": "Mode of rhythm module",
+			"type": "number",
+			"read": true,
+			"write": false,
+			"role": "value"
+		},
+		{}
+	);
+}
+
+// Deletes Rhythm info states
+function DeleteRhythmStates() {
+	adapter.deleteState("Rhythm", "info", "active");
+	adapter.deleteState("Rhythm", "info", "hardwareVersion");
+	adapter.deleteState("Rhythm", "info", "firmwareVersion");
+	adapter.deleteState("Rhythm", "info", "auxAvailable");
+	adapter.deleteState("Rhythm", "info", "rhythmMode");
+}
+
+// Creates Rhythm Device
+function CreateDeleteRhythmDevice() {
+	// check if Rhythm Device already exists
+	adapter.getObject("Rhythm", function (err, obj) {
+		if (err) throw err;
+		// if not existent, create it
+		if (obj == null) {
+			adapter.log.info("Rhythm module information available. Creating Rhythm device...");
+
+			// create Rhythm Device
+			adapter.createDevice("Rhythm",
+				{
+					"name": "Light Panels Rhythm Module Device",
+					"icon": "/icons/rhythm.png"
+				},
+				{}
+			);
+			// create Rhythm Channel
+			adapter.createChannel("Rhythm", "info",
+				{
+					"name": "Light Panels Rhythm Module Device Information",
+					"icon": "/icons/rhythm.png"
+				},
+				{}
+			);
+			// create "connected" state
+			adapter.createState("Rhythm", "info", "connected",
+				{
+					"name": "Rhythm module connected to nanoleaf light panels",
+					"type": "boolean",
+					"read": true,
+					"write": false,
+					"role": "indicator.connected"
+				},
+				{}
+			);
+		}
+	});
+}
+
+// Deletes Rhythm device
+function DeleteRhythmDevice() {
+	// check if Rhythm Device exists
+	adapter.getObject("Rhythm", function (err, obj) {
+		if (err) throw err;
+		// if existent, delete it
+		if (obj != null) {
+			adapter.log.debug("Rhythm information is not available anymore. Delete Rhythm device...");
+
+			adapter.deleteDevice("Rhythm");
+		}
+	});
+}
+
 function connect(isReconnect) {
 	// establish connection through sending info-request
 	auroraAPI.getInfo()
@@ -521,8 +669,14 @@ function connect(isReconnect) {
 			// set connection state to true
 			adapter.setState("info.connection", true, true);
 			adapter.log.info(((isReconnect) ? "Reconnected" : "Connected") + " to \"" + auroraAPI.host + ":" + auroraAPI.port);
+
+			var infoObj = JSON.parse(info);
+			// if Rhythm module information available -> create Rhythm device, else delete it
+			if (typeof infoObj.rhythm === "object") CreateDeleteRhythmDevice();
+			else DeleteRhythmDevice();
+
 			// Update stated directly from reply
-			writeStates(JSON.parse(info));
+			writeStates(infoObj);
 			// all states changes inside the adapters namespace are subscribed
 			adapter.subscribeStates("*");
 			// Start Status update polling
@@ -545,7 +699,6 @@ function connect(isReconnect) {
 			adapter.log.debug("Connect timer startet with " + reconnectInterval * 1000 + " ms");
 	});
 }
-
 
 function init() {
 	try {
