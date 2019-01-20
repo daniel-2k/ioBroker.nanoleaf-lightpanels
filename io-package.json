@@ -40,7 +40,7 @@
                 "de": "Initiale Version"
             }
         },
-        "title": "nanoleaf Light Panels Adapter",
+        "title": "nanoleaf Light Panels/Canvas Adapter",
         "desc": {
             "en": "Controlling the nanoleaf Light Panels/Canvas (fomerly nanoleaf Aurora) in ioBroker",
             "de": "Steuerung der nanoleaf Light Panels/Canvas (fomerly nanoleaf Aurora) in ioBroker"
