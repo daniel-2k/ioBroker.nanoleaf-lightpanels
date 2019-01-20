@@ -43,8 +43,8 @@ You can use the nanoleaf vis demo project found in the /vis subfolder on github.
 
 ## Changelog
 
-### 0.7.0 (2019-01-12)
-* (daniel_2k) fixed: now compatible with nanoleaf Canvas (error with rhythm module detection, because Canvas has builtin Rhythm module)
+### 0.7.0 (2019-01-20)
+* (daniel_2k) new: compatible with nanoleaf Canvas
 * (daniel_2k) changed: Rhythm module information is now obtained depended if it is connected or not (only Light Panels)
 * (daniel_2k) changed: some small adjustments
 

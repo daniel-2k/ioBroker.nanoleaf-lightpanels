@@ -9,19 +9,21 @@ var utils = require(__dirname + '/lib/utils'); // Get common adapter utils
 var adapter = new utils.Adapter("nanoleaf-lightpanels");
 
 // constants
-const http = require('http');
-const AuroraApi = require('nanoleaf-aurora-client');
+const http = require("http");
+const AuroraApi = require("nanoleaf-aurora-client");
 const minPollingInterval = 500;			// milliseconds
 const minReconnectInterval = 10;		// seconds
-
-const effectObjName = "LightPanels.effect";
 const defaultTimeout = 10000;
+
+// nanoleaf device definitions
+const nanoleafDevices = {lightpanels: {model: "NL22", deviceName: "LightPanels", name: "Light Panels"}, canvas: {model: "NL29", deviceName: "Canvas", name: "Canvas" }};
 
 // variables
 var auroraAPI;							// Instance of auroraAPI-Client
 var lastError;							// keeps the last error occurred
 var commandQueue = [];					// Array for all state changes (commands) to process (Queue)
 var commandQueueProcessing = false;		// flag to show that command queue processing is in progress
+var NLdevice;							// holds the nanoleaf device id which will be processed
 
 // Timers
 var pollingTimer;
@@ -30,6 +32,11 @@ var connectTimer;
 var pollingInterval;
 var reconnectInterval;
 
+// start here!
+adapter.on("ready", function () {
+	adapter.log.info("Nanoleaf adapter \"" + adapter.namespace + "\" started.");
+	main();
+});
 
 // is called when adapter shuts down - callback has to be called under any circumstances!
 adapter.on("unload", function (callback) {
@@ -79,7 +86,7 @@ adapter.on("stateChange", function (id, state) {
 		// get Devicename
 		var DeviceName = stateID.pop();
 
-		if (DeviceName == "LightPanels") {
+		if (DeviceName == NLdevice) {
 			commandQueue.push({stateName, state});
 			adapter.log.debug("Command \"" + stateName + "\" with value \"" + state.val + "\" added to queue! Queue length: " + commandQueue.length);
 
@@ -233,12 +240,6 @@ function clearCommandQueue() {
 	adapter.log.debug("Command queue cleared!");
 }
 
-// start here!
-adapter.on("ready", function () {
-	adapter.log.info("Nanoleaf adapter \"" + adapter.namespace + "\" started.");
-	main();
-});
-
 // convert HSV color to RGB color
 function HSVtoRGB(hue, saturation, value) {
 	var h, i, f, s, v, p, q, t, r, g, b;
@@ -356,9 +357,7 @@ function statusUpdate() {
 		})
 		.catch(function(err) {
 			adapter.log.debug("Updating states failed: " + formatError(err));
-			StopPollingTimer();
-			clearCommandQueue();										// stop processing commands by clearing queue
-			adapter.unsubscribeStates("*");								// unsubscribe state changes
+			stopAdapterProcessing();
 			adapter.setState("info.connection", false, true);			// set disconnect state
 			adapter.log.warn("Connection to \"" + auroraAPI.host + ":" + auroraAPI.port + "\" lost, " + formatError(err) + ". Try to reconnect...");
 			lastError = err;
@@ -375,16 +374,16 @@ function writeStates(newStates) {
 			StopPollingTimer();		// stop polling because something is wrong
 		}
 		else {
-			setChangedState("LightPanels.state", 		oldStates[adapter.namespace + ".LightPanels.state"]		, newStates.state.on.value);
-			setChangedState("LightPanels.brightness", 	oldStates[adapter.namespace + ".LightPanels.brightness"], newStates.state.brightness.value);
-			setChangedState("LightPanels.hue",			oldStates[adapter.namespace + ".LightPanels.hue"]		, newStates.state.hue.value);
-			setChangedState("LightPanels.saturation", 	oldStates[adapter.namespace + ".LightPanels.saturation"], newStates.state.sat.value);
-			setChangedState("LightPanels.colorTemp",	oldStates[adapter.namespace + ".LightPanels.colorTemp"]	, newStates.state.ct.value);
+			setChangedState(NLdevice + ".state", 		oldStates[adapter.namespace + "." + NLdevice + ".state"]		, newStates.state.on.value);
+			setChangedState(NLdevice + ".brightness", 	oldStates[adapter.namespace + "." + NLdevice + ".brightness"], newStates.state.brightness.value);
+			setChangedState(NLdevice + ".hue",			oldStates[adapter.namespace + "." + NLdevice + ".hue"]		, newStates.state.hue.value);
+			setChangedState(NLdevice + ".saturation", 	oldStates[adapter.namespace + "." + NLdevice + ".saturation"], newStates.state.sat.value);
+			setChangedState(NLdevice + ".colorTemp",	oldStates[adapter.namespace + "." + NLdevice + ".colorTemp"]	, newStates.state.ct.value);
 			// write RGB color only when colorMode is 'hs'
 			if (newStates.state.colorMode == "hs")
-				setChangedState("LightPanels.colorRGB",	oldStates[adapter.namespace + ".LightPanels.colorRGB"]	, HSVtoRGB(newStates.state.hue.value, newStates.state.sat.value, newStates.state.brightness.value));
-			setChangedState("LightPanels.colorMode",	oldStates[adapter.namespace + ".LightPanels.colorMode"]	, newStates.state.colorMode);
-			setChangedState("LightPanels.effect",		oldStates[adapter.namespace + ".LightPanels.effect"]	, newStates.effects.select);
+				setChangedState(NLdevice + ".colorRGB",	oldStates[adapter.namespace + "." + NLdevice + ".colorRGB"]	, HSVtoRGB(newStates.state.hue.value, newStates.state.sat.value, newStates.state.brightness.value));
+			setChangedState(NLdevice + ".colorMode",	oldStates[adapter.namespace + "." + NLdevice + ".colorMode"]	, newStates.state.colorMode);
+			setChangedState(NLdevice + ".effect",		oldStates[adapter.namespace + "." + NLdevice + ".effect"]	, newStates.effects.select);
 			var effectsArray = newStates.effects.effectsList;
 			var effectsList;
 			var effectsStates = new Object({"*Solid*": "Solid", "*Dynamic*": "Dynamic"});
@@ -396,28 +395,28 @@ function writeStates(newStates) {
 					effectsList = effectsArray[i];
 				effectsStates[effectsArray[i]] = effectsArray[i];
 			}
-			setChangedState("LightPanels.effectsList", 	oldStates[adapter.namespace + ".LightPanels.effectsList"], effectsList);
+			setChangedState(NLdevice + ".effectsList", 	oldStates[adapter.namespace + "." + NLdevice + ".effectsList"], effectsList);
 			// updating states of effect if changed
-			adapter.getObject(effectObjName, function (err, obj) {
+			adapter.getObject(NLdevice + ".effect", function (err, obj) {
 				if (err) adapter.log.debug("Error getting \"" + effectObject + "\": " + err);
 				else {
 					// only if list has changed
 					if (JSON.stringify(effectsStates) != JSON.stringify(obj.common.states)) {
 						adapter.log.debug("Update from OpenAPI: possible states for state \"effect\" changed >>>> set new states: " + JSON.stringify(effectsArray));
 						obj.common.states = effectsStates;
-						adapter.setObject(effectObjName, obj, function (err) {
-							if (err) adapter.log.debug("Error getting \"" + effectObjName + "\": " + err)
+						adapter.setObject(NLdevice + ".effect", obj, function (err) {
+							if (err) adapter.log.debug("Error getting \"" + NLdevice + ".effect" + "\": " + err)
 						});
 					}
 				}
 			});
 			
-			setChangedState("LightPanels.info.name",			oldStates[adapter.namespace + ".LightPanels.info.name"]				, newStates.name);
-			setChangedState("LightPanels.info.serialNo",		oldStates[adapter.namespace + ".LightPanels.info.serialNo"]			, newStates.serialNo);
-			setChangedState("LightPanels.info.firmwareVersion", oldStates[adapter.namespace + ".LightPanels.info.firmwareVersion"]	, newStates.firmwareVersion);
-			setChangedState("LightPanels.info.model",			oldStates[adapter.namespace + ".LightPanels.info.model"]			, newStates.model);
+			setChangedState(NLdevice + ".info.name",			oldStates[adapter.namespace + "." + NLdevice + ".info.name"]				, newStates.name);
+			setChangedState(NLdevice + ".info.serialNo",		oldStates[adapter.namespace + "." + NLdevice + ".info.serialNo"]			, newStates.serialNo);
+			setChangedState(NLdevice + ".info.firmwareVersion", oldStates[adapter.namespace + "." + NLdevice + ".info.firmwareVersion"]	, newStates.firmwareVersion);
+			setChangedState(NLdevice + ".info.model",			oldStates[adapter.namespace + "." + NLdevice + ".info.model"]			, newStates.model);
 
-			// Rhythm module only available with nanoleaf Light-Panals, Canvas has built in module and here we get no info about Rhythm
+			// Rhythm module only available with nanoleaf Light-Panels, Canvas has built in module and here we get no info about Rhythm
 			if (typeof newStates.rhythm === "object") {
 				let oldConnectedState = oldStates[adapter.namespace + ".Rhythm.info.connected"];
 				let newConnectedState = newStates.rhythm.rhythmConnected;
@@ -431,7 +430,7 @@ function writeStates(newStates) {
 						adapter.log.info("Rhythm module attached!");
 						adapter.log.debug("Creating Rhythm states...");
 						CreateRhythmStates();
-					};
+					}
 
 					// update states
 					setChangedState("Rhythm.info.active",			oldStates[adapter.namespace + ".Rhythm.info.active"],			newStates.rhythm.rhythmActive);
@@ -539,98 +538,287 @@ function getAuthToken(address, port, callback) {
 	req.end();
 }
 
-// Creates Rhythm info states
-function CreateRhythmStates() {
-	// create "active" state
-	adapter.createState("Rhythm", "info", "active",
-		{
-			"name": "Rhythm module active",
-			"type": "boolean",
-			"read": true,
-			"write": false,
-			"role": "indicator"
-		},
-		{}
-	);
-	// create "auxAvailable" state
-	adapter.createState("Rhythm", "info" , "auxAvailable",
-		{
-			"name": "AUX of rhythm module available",
-			"type": "boolean",
-			"read": true,
-			"write": false,
-			"role": "indicator"
-		},
-		{}
-	);
-	// create "firmwareVersion" state
-	adapter.createState("Rhythm", "info", "firmwareVersion",
-		{
-			"name": "Firmware Version of rhyhtm module",
-			"type": "string",
-			"read": true,
-			"write": false,
-			"role": "info.version"
-		},
-		{}
-	);
-	// create "hardwareVersion" state
-	adapter.createState("Rhythm", "info", "hardwareVersion",
-		{
-			"name": "Hardware Version of rhythm module",
-			"type": "string",
-			"read": true,
-			"write": false,
-			"role": "info.version.hw"
-		},
-		{}
-	);
-	// create "rhythmMode" state
-	adapter.createState("Rhythm", "info" , "rhythmMode",
-		{
-			"name": "Mode of rhythm module",
-			"type": "number",
-			"read": true,
-			"write": false,
-			"role": "value"
-		},
-		{}
-	);
+// Create nanoleaf deviceP
+function createNanoleafDevice(model, rhythmAvailable, callback) {
+	var nameProp;
+
+	switch (model) {
+		// Canvas
+		case nanoleafDevices.canvas.model:
+			NLdevice = nanoleafDevices.canvas.deviceName;
+			nameProp = nanoleafDevices.canvas.name;
+			break;
+		// LightPanels
+		case nanoleafDevices.lightpanels.model:
+		// LightPanels are fallback
+		default:
+			NLdevice = nanoleafDevices.lightpanels.deviceName;
+			nameProp = nanoleafDevices.lightpanels.name;
+	}
+	deleteNanoleafDevices(model);	// delete all other nanoleaf device models if existing
+
+	// if Rhythm module available -> create Rhythm device, else delete it
+	if (rhythmAvailable) CreateRhythmDevice();
+	else DeleteRhythmDevice();
+
+	adapter.log.debug("nanoleaf Device \"" + nameProp + "\" detected!");
+
+	// create the device if not exists
+	adapter.getObject(NLdevice, function (err, obj) {
+		if (err) throw err;
+		if (obj == null) {
+			adapter.log.info("New nanoleaf device \"" + nameProp + "\" detected!");
+
+			// Create nanoleaf Device
+			adapter.createDevice(NLdevice,
+				{
+					"name": nameProp + " Device",
+					"icon": "/icons/" + NLdevice.toLocaleLowerCase() + ".png"
+				}, {}
+			);
+			// create info Channel
+			adapter.createChannel(NLdevice, "info",
+				{
+					"name": nameProp + " Device Information",
+					"icon": "/icons/" + NLdevice.toLocaleLowerCase() + ".png"
+				}, {}
+			);
+			// create info "firmwareVersion" state
+			adapter.createState(NLdevice, "info", "firmwareVersion",
+				{
+					"name": "Firmware Version of nanoleaf device",
+					"type": "string",
+					"read": true,
+					"write": false,
+					"role": "info.version"
+				}, {}
+			);
+			// create info "model" state
+			adapter.createState(NLdevice, "info", "model",
+				{
+					"name": "Model of nanoleaf device",
+					"type": "string",
+					"read": true,
+					"write": false,
+					"role": "info.model"
+				}, {}
+			);
+			// create info "name" state
+			adapter.createState(NLdevice, "info", "name",
+				{
+					"name": "Name of nanoleaf device",
+					"type": "string",
+					"read": true,
+					"write": false,
+					"role": "info.name"
+				}, {}
+			);
+			// create info "serialNo" state
+			adapter.createState(NLdevice, "info", "serialNo",
+				{
+					"name": "Serial No. of nanoleaf device",
+					"type": "string",
+					"read": true,
+					"write": false,
+					"role": "info.serial"
+				}, {}
+			);
+			// create "state" state
+			adapter.createState(NLdevice, "", "state",
+				{
+					"name": "Power State",
+					"type": "boolean",
+					"def": false,
+					"read": true,
+					"write": true,
+					"role": "switch.light",
+					"desc": "Switch on/off"
+				}, {}
+			);
+			// create "brightness" state
+			adapter.createState(NLdevice, "", "brightness",
+				{
+					"name": "Brightness level",
+					"type": "number",
+					"unit": "%",
+					"def": 100,
+					"min": 0,
+					"max": 100,
+					"read": true,
+					"write": true,
+					"role": "level.dimmer",
+					"desc": "Brightness level in %"
+				}, {}
+			);
+			// create "hue" state
+			adapter.createState(NLdevice, "", "hue",
+				{
+					"name": "Hue value",
+					"type": "number",
+					"unit": "°",
+					"def": 100,
+					"min": 0,
+					"max": 360,
+					"read": true,
+					"write": true,
+					"role": "level.color.hue",
+					"desc": "Hue value"
+				}, {}
+			);
+			// create "saturation" state
+			adapter.createState(NLdevice, "", "saturation",
+				{
+					"name": "Saturation value",
+					"type": "number",
+					"unit": "%",
+					"def": 100,
+					"min": 0,
+					"max": 100,
+					"read": true,
+					"write": true,
+					"role": "level.color.saturation",
+					"desc": "Saturation value"
+				}, {}
+			);
+			// create "colorMode" state
+			adapter.createState(NLdevice, "", "colorMode",
+				{
+					"name": "Color Mode",
+					"type": "string",
+					"read": true,
+					"write": false,
+					"role": "value.color.mode",
+					"desc": "Color Mode"
+				}, {}
+			);
+			// create "colorRGB" state
+			adapter.createState(NLdevice, "", "colorRGB",
+				{
+					"name": "RGB Color",
+					"type": "string",
+					"read": true,
+					"write": true,
+					"role": "level.color.rgb",
+					"desc": "Color in RGB hex format (#000000 to #FFFFFF)"
+				}, {}
+			);
+			// create "colorTemp" state
+			adapter.createState(NLdevice, "", "colorTemp",
+				{
+					"name": "Color Temperature",
+					"type": "number",
+					"unit": "K",
+					"def": 4000,
+					"min": 1200,
+					"max": 6500,
+					"read": true,
+					"write": true,
+					"role": "level.color.temperature",
+					"desc": "Color Temperature"
+				}, {}
+			);
+			// create "effect" state
+			adapter.createState(NLdevice, "", "effect",
+				{
+					"name": "Current effect",
+					"type": "string",
+					"read": true,
+					"write": true,
+					"role": "text",
+					"states": [],
+					"desc": "Current effect"
+				}, {}
+			);
+			// create "effectsList" state
+			adapter.createState(NLdevice, "", "effectsList",
+				{
+					"name": "Effects list",
+					"type": "string",
+					"read": true,
+					"write": false,
+					"role": "text",
+					"desc": "List of available effects"
+				}, {}
+			);
+			// create "identify" state
+			adapter.createState(NLdevice, "", "identify",
+				{
+					"name": "Identify panels",
+					"type": "boolean",
+					"read": false,
+					"write": true,
+					"role": "button",
+					"desc": "Causes the panels to flash in unison"
+				}, {},
+				// callback starts adapter processing
+				function() { callback(); }
+			);
+		}
+		else{
+			callback();	// callback starts adapter processing
+		}
+	});
 }
 
-// Deletes Rhythm info states
-function DeleteRhythmStates() {
-	adapter.deleteState("Rhythm", "info", "active");
-	adapter.deleteState("Rhythm", "info", "hardwareVersion");
-	adapter.deleteState("Rhythm", "info", "firmwareVersion");
-	adapter.deleteState("Rhythm", "info", "auxAvailable");
-	adapter.deleteState("Rhythm", "info", "rhythmMode");
+// delete all nanoleaf devices
+//		Parameter 'ignoreModel': ignore deletion of this device model
+function deleteNanoleafDevices(ignoreModel) {
+	// delete canvas device if not ignored
+	if (ignoreModel !== nanoleafDevices.canvas.model) {
+		// check if device is still existing
+		adapter.getObject(nanoleafDevices.canvas.deviceName, function (err, obj) {
+			if (err) throw err;
+			// delete it
+			if (obj != null) {
+				adapter.log.debug("Delete \"" + nanoleafDevices.canvas.deviceName + "\" device...");
+				adapter.getStates(nanoleafDevices.canvas.deviceName + ".*", function (err, states) {
+					for(var id in states)
+						adapter.delObject(id);
+				});
+				adapter.deleteDevice(nanoleafDevices.canvas.deviceName);
+			}
+		});
+	}
+	// delete light panels device if not ignored
+	if (ignoreModel !== nanoleafDevices.lightpanels.model) {
+		// check if device is still existing
+		adapter.getObject(nanoleafDevices.lightpanels.deviceName, function (err, obj) {
+			if (err) throw err;
+			// delete it
+			if (obj != null) {
+				adapter.log.debug("Delete \"" + nanoleafDevices.lightpanels.deviceName + "\" device...");
+				adapter.getStates(nanoleafDevices.lightpanels.deviceName + ".*", function (err, states) {
+					for(var id in states)
+						adapter.delObject(id);
+				});
+				adapter.deleteDevice(nanoleafDevices.lightpanels.deviceName);
+			}
+		});
+	}
 }
 
 // Creates Rhythm Device
-function CreateDeleteRhythmDevice() {
+function CreateRhythmDevice() {
 	// check if Rhythm Device already exists
 	adapter.getObject("Rhythm", function (err, obj) {
 		if (err) throw err;
 		// if not existent, create it
 		if (obj == null) {
-			adapter.log.info("Rhythm module information available. Creating Rhythm device...");
+			adapter.log.debug("Rhythm module information available. Creating Rhythm device...");
 
 			// create Rhythm Device
 			adapter.createDevice("Rhythm",
 				{
 					"name": "Light Panels Rhythm Module Device",
 					"icon": "/icons/rhythm.png"
-				},
-				{}
+				}, {}
 			);
 			// create Rhythm Channel
 			adapter.createChannel("Rhythm", "info",
 				{
 					"name": "Light Panels Rhythm Module Device Information",
 					"icon": "/icons/rhythm.png"
-				},
-				{}
+				}, {}
 			);
 			// create "connected" state
 			adapter.createState("Rhythm", "info", "connected",
@@ -640,8 +828,7 @@ function CreateDeleteRhythmDevice() {
 					"read": true,
 					"write": false,
 					"role": "indicator.connected"
-				},
-				{}
+				}, {}
 			);
 		}
 	});
@@ -654,11 +841,90 @@ function DeleteRhythmDevice() {
 		if (err) throw err;
 		// if existent, delete it
 		if (obj != null) {
-			adapter.log.debug("Rhythm information is not available anymore. Delete Rhythm device...");
+			adapter.log.debug("Rhythm module is not available. Delete Rhythm device...");
 
 			adapter.deleteDevice("Rhythm");
 		}
 	});
+}
+
+// Creates Rhythm info states
+function CreateRhythmStates() {
+	// create "active" state
+	adapter.createState("Rhythm", "info", "active",
+		{
+			"name": "Rhythm module active",
+			"type": "boolean",
+			"read": true,
+			"write": false,
+			"role": "indicator"
+		}, {}
+	);
+	// create "auxAvailable" state
+	adapter.createState("Rhythm", "info" , "auxAvailable",
+		{
+			"name": "AUX of rhythm module available",
+			"type": "boolean",
+			"read": true,
+			"write": false,
+			"role": "indicator"
+		}, {}
+	);
+	// create "firmwareVersion" state
+	adapter.createState("Rhythm", "info", "firmwareVersion",
+		{
+			"name": "Firmware Version of rhyhtm module",
+			"type": "string",
+			"read": true,
+			"write": false,
+			"role": "info.version"
+		}, {}
+	);
+	// create "hardwareVersion" state
+	adapter.createState("Rhythm", "info", "hardwareVersion",
+		{
+			"name": "Hardware Version of rhythm module",
+			"type": "string",
+			"read": true,
+			"write": false,
+			"role": "info.version.hw"
+		}, {}
+	);
+	// create "rhythmMode" state
+	adapter.createState("Rhythm", "info" , "rhythmMode",
+		{
+			"name": "Mode of rhythm module",
+			"type": "number",
+			"read": true,
+			"write": false,
+			"role": "value"
+		}, {}
+	);
+}
+
+// Deletes Rhythm info states
+function DeleteRhythmStates() {
+	adapter.deleteState("Rhythm", "info", "active");
+	adapter.deleteState("Rhythm", "info", "hardwareVersion");
+	adapter.deleteState("Rhythm", "info", "firmwareVersion");
+	adapter.deleteState("Rhythm", "info", "auxAvailable");
+	adapter.deleteState("Rhythm", "info", "rhythmMode");
+}
+
+function startAdapterProcessing() {
+	// first update
+	statusUpdate();
+	// all states changes inside the adapters namespace are subscribed
+	adapter.subscribeStates(NLdevice + ".*");
+	// Start Status update polling
+	StartPollingTimer();
+	adapter.log.debug("Polling timer startet with " + pollingInterval + " ms");
+}
+
+function stopAdapterProcessing() {
+	StopPollingTimer();
+	clearCommandQueue();										// stop processing commands by clearing queue
+	adapter.unsubscribeStates(NLdevice + ".*");					// unsubscribe state changes
 }
 
 function connect(isReconnect) {
@@ -670,18 +936,10 @@ function connect(isReconnect) {
 			adapter.setState("info.connection", true, true);
 			adapter.log.info(((isReconnect) ? "Reconnected" : "Connected") + " to \"" + auroraAPI.host + ":" + auroraAPI.port);
 
-			var infoObj = JSON.parse(info);
-			// if Rhythm module information available -> create Rhythm device, else delete it
-			if (typeof infoObj.rhythm === "object") CreateDeleteRhythmDevice();
-			else DeleteRhythmDevice();
+			var deviceInfo = JSON.parse(info);
 
-			// Update stated directly from reply
-			writeStates(infoObj);
-			// all states changes inside the adapters namespace are subscribed
-			adapter.subscribeStates("*");
-			// Start Status update polling
-			StartPollingTimer();
-			adapter.log.debug("Polling timer startet with " + pollingInterval + " ms");
+			// create nanoleaf device and start adapter processing with callback
+			createNanoleafDevice(deviceInfo.model, typeof deviceInfo.rhythm === "object", startAdapterProcessing);
 		})
 		.catch(function(err) {
 			var message = "Please check hostname/IP, device and connection!";
