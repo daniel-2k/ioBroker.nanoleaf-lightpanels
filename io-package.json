@@ -1,8 +1,12 @@
 {
     "common": {
         "name": "nanoleaf-lightpanels",
-        "version": "0.7.0",
+        "version": "0.8.0",
         "news": {
+            "0.8.0": {
+                "en": "adapter has own nanoleaf-api library<br>fixed problems with Canvas<br>added compact mode<br>changed handling of device states<br>fixed command queue does not process",
+                "de": "Adapter hat eigene nanoleaf-api-Bibliothek<br>Probleme mit Canvas behoben<br>Compact mode hinzugefügt<br>Handling der Device-States geändert<br>Problem nicht abbauender Command-Queue behoben"
+            },
             "0.7.0": {
                 "en": "compatible with nanoleaf Canvas<br>Rhythm module information is now obtained depended if it is connected or not (only Light Panels)<br>some small adjustments",
                 "de": "Kompatibilität mit nanoleaf Canvas<br>Rhythm Modul Informationen werden in Abhängigkeit des Verbindungsstatus ermittelt (nur Light Panels)<br>kleine Anpassungen"
@@ -53,6 +57,7 @@
         "mode": "daemon",
         "icon": "nanoleaf-lightpanels.png",
         "materialize": true,
+        "compact": true,
         "enabled": true,
         "extIcon": "https://raw.githubusercontent.com/daniel-2k/ioBroker.nanoleaf-lightpanels/master/admin/nanoleaf-lightpanels.png",
         "keywords": [
