@@ -46,6 +46,7 @@ You can use the nanoleaf vis demo project found in the /vis subfolder on github.
 ### 0.8.0 (2019-01-27)
 * (daniel_2k) changed: adapter has own nanoleaf-api lib (no dependency), because the nanoleaf-aurora-client module does not implement the nanoleaf API correctly (will be changed until this is fixed in the module)
 * (daniel_2k) fixed: should now work properly with Canvas
+* (daniel_2k) new: duration for brightness changes added (can be set in native part of brightness state)
 * (daniel_2k) new: added compact mode
 * (daniel_2k) changed: handling of device states
 * (daniel_2k) fixed: command queue will not process when states are written which cannot be processed
