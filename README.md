@@ -43,6 +43,14 @@ You can use the nanoleaf vis demo project found in the /vis subfolder on github.
 
 ## Changelog
 
+### 0.8.0 (2019-01-27)
+* (daniel_2k) changed: adapter has own nanoleaf-api lib (no dependency), because the nanoleaf-aurora-client module does not implement the nanoleaf API correctly (will be changed until this is fixed in the module)
+* (daniel_2k) fixed: should now work properly with Canvas
+* (daniel_2k) new: added compact mode
+* (daniel_2k) changed: handling of device states
+* (daniel_2k) fixed: command queue will not process when states are written which cannot be processed
+* (daniel_2k) changed: some small code adjustments
+
 ### 0.7.0 (2019-01-20)
 * (daniel_2k) new: compatible with nanoleaf Canvas
 * (daniel_2k) changed: Rhythm module information is now obtained depended if it is connected or not (only Light Panels)
