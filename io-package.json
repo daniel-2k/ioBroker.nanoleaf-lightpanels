@@ -1,8 +1,12 @@
 {
     "common": {
         "name": "nanoleaf-lightpanels",
-        "version": "0.8.0",
+        "version": "0.8.1",
         "news": {
+        	"0.8.0": {
+                "en": "rhythm module mode (microphone/AUX input) can be changed<br>removed fixed effects *Solid* and *Dynamic* for Canvas<br>fixed rhythm module information depending of connect state",
+                "de": "Steuerung des Ryhthm-Modul-Modus (Mikrofon/Aux-In) möglich<br>feste Effekte *Solid* und *Dynamic* für Canvas entfernt<br>Rhythm-Modul-Information abhängig vom Verbindungsstatus korrigiert"
+            },
             "0.8.0": {
                 "en": "adapter has own nanoleaf-api library<br>fixed problems with Canvas<br>added compact mode<br>changed handling of device states<br>fixed command queue does not process",
                 "de": "Adapter hat eigene nanoleaf-api-Bibliothek<br>Probleme mit Canvas behoben<br>Compact mode hinzugefügt<br>Handling der Device-States geändert<br>Problem nicht abbauender Command-Queue behoben"

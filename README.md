@@ -43,6 +43,11 @@ You can use the nanoleaf vis demo project found in the /vis subfolder on github.
 
 ## Changelog
 
+### 0.8.1 (2019-01-31)
+* (daniel_2k) new: rhythm module mode (microphone/AUX input) can be changed
+* (daniel_2k) changed: removed fixed effects *Solid* and *Dynamic* for Canvas because not supported
+* (daniel_2k) fixed: Rhythm module information depending of connect state
+
 ### 0.8.0 (2019-01-27)
 * (daniel_2k) changed: adapter has own nanoleaf-api lib (no dependency), because the nanoleaf-aurora-client module does not implement the nanoleaf API correctly (will be changed until this is fixed in the module)
 * (daniel_2k) fixed: should now work properly with Canvas
