@@ -427,10 +427,7 @@ function writeStates(newStates) {
 
 			let effectsArray = newStates.effects.effectsList;
 			let effectsList;
-			let effectsStates;
-			// pseudo states *Solid* and *Dynamic* only work on Light Panels device
-			if (NLdevice === nanoleafDevices.lightpanels.deviceName) effectsStates = new Object({"*Solid*": "Solid", "*Dynamic*": "Dynamic"});
-			else effectsStates = {};
+			let effectsStates = {};
 
 			// loop through effectsList and write it as semicolon separated string and new states object
 			for (let i = 0; i < effectsArray.length; i++) {

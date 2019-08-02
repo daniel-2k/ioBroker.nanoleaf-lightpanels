@@ -1,9 +1,13 @@
 {
     "common": {
         "name": "nanoleaf-lightpanels",
-        "version": "0.8.1",
+        "version": "0.8.2",
         "news": {
-        	"0.8.0": {
+            "0.8.2": {
+                "en": "effects with special characters (german umlauts) can now be set (fixes HTTP error 422)<br>removed fixed effects *Solid* and *Dynamic* for all devices (works also no longer with Light Panels since firmware update)",
+                "de": "Effekte mit Umlauten werden korrekt gesetzt (behebt HTTP error 422)<br>Statische Effekte *Solid* und *Dynamic* für alle Geräte entfernt (funktioniert seit Firmware-Update auch nicht mehr bei den Light Panels)"
+            },
+        	"0.8.1": {
                 "en": "rhythm module mode (microphone/AUX input) can be changed<br>removed fixed effects *Solid* and *Dynamic* for Canvas<br>fixed rhythm module information depending of connect state",
                 "de": "Steuerung des Ryhthm-Modul-Modus (Mikrofon/Aux-In) möglich<br>feste Effekte *Solid* und *Dynamic* für Canvas entfernt<br>Rhythm-Modul-Information abhängig vom Verbindungsstatus korrigiert"
             },
@@ -48,7 +52,7 @@
                 "de": "Initiale Version"
             }
         },
-        "title": "nanoleaf Light Panels/Canvas Adapter",
+        "title": "nanoleaf Light Panels/Canvas",
         "desc": {
             "en": "Controlling the nanoleaf Light Panels/Canvas (fomerly nanoleaf Aurora) in ioBroker",
             "de": "Steuerung der nanoleaf Light Panels/Canvas (fomerly nanoleaf Aurora) in ioBroker"
