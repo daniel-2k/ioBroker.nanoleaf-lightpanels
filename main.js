@@ -148,23 +148,30 @@ function processCommandQueue() {
 										processCommandQueue();
 									});
 							break;
-		// Brithness
+		// Brightness
 		case "brightness":	adapter.getObject(NLdevice + ".brightness", function(err, obj) {
-								let duration = 0;
-
 								if (err) adapter.log.error("Error while reading brightness object: " + err);
-								else if (obj && obj.native && Number.isInteger(obj.native.duration)) duration = obj.native.duration;
-
-								auroraAPI.setBrightness(parseInt(state.val), duration) // parseInt to fix vis colorPicker
-									.then(function() {
-										adapter.log.debug("OpenAPI: Brightness set to " + state.val);
-									})
-									.catch(function(err) {
-										logApiError("OpenAPI: Error while setting brightness value " + state.val, err);
-									})
-									.then(function() {
-										processCommandQueue();
-									});
+								adapter.getState(NLdevice + ".transition_time", function(err, durationState) {
+									let duration = 0;
+									if (!err && Number.isInteger(durationState.val)) duration = durationState.val;
+									auroraAPI.setBrightness(parseInt(state.val), duration) // parseInt to fix vis colorPicker
+										.then(function() {
+											adapter.log.debug("OpenAPI: Brightness set to " + state.val + " over " + duration + "sec");
+										})
+										.catch(function(err) {
+											logApiError("OpenAPI: Error while setting brightness value " + state.val + " over " + duration + "sec", err);
+										})
+										.then(function() {
+											processCommandQueue();
+										});
+								});
+							});
+							break;
+		// Brightness Transition Time
+		case "transition_time":	adapter.getObject(NLdevice + ".transition_time", function(err, obj) {
+								if (err) adapter.log.error("Error while reading brightness transition time object: " + err);
+								adapter.setState(NLdevice + ".transition_time", parseInt(state.val), true); // Convert + ACK
+								processCommandQueue();
 							});
 							break;
 		// Hue
@@ -719,22 +726,27 @@ function createNanoleafDevice(deviceInfo, callback) {
 					"role": "level.dimmer",
 					"desc": "Brightness level in %"
 				},
-				"native": { "duration": 0 }
+				"native": {}
 			},
-			// set new native value "duration" if not existing (for older versions)
-			function (){
-				adapter.getObject(NLdevice + ".brightness", function(err, obj) {
-					if (err) adapter.log.error("Error while reading brightness object: " + err);
-					else {
-						if (!obj.native || !obj.native.duration) {
-							obj.native = { duration: 0 };
-							adapter.setObject(NLdevice + ".brightness", obj, function(err, obj) {
-								if (err) adapter.log.error("Error while setting brightness object: " + err);
-							});
-						}
-					}
-				});
-			}
+		);
+		// create "transition_time" state
+		adapter.setObjectNotExists (NLdevice + ".transition_time",
+			{
+				"type": "state",
+				"common": {
+					"name": "Brightness transition time",
+					"type": "number",
+					"unit": "sec",
+					"def": 0,
+					"min": 0,
+					"max": 60,
+					"read": true,
+					"write": true,
+					"role": "transition_time.dimmer",
+					"desc": "Brightness transition time in sec"
+				},
+				"native": {}
+			},
 		);
 		// create "hue" state
 		adapter.setObjectNotExists (NLdevice + ".hue",
