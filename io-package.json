@@ -1,106 +1,111 @@
 {
-    "common": {
-        "name": "nanoleaf-lightpanels",
-        "version": "0.8.2",
-        "news": {
-            "0.8.2": {
-                "en": "effects with special characters (german umlauts) can now be set (fixes HTTP error 422)<br>removed fixed effects *Solid* and *Dynamic* for all devices (works also no longer with Light Panels since firmware update)",
-                "de": "Effekte mit Umlauten werden korrekt gesetzt (behebt HTTP error 422)<br>Statische Effekte *Solid* und *Dynamic* für alle Geräte entfernt (funktioniert seit Firmware-Update auch nicht mehr bei den Light Panels)"
-            },
-        	"0.8.1": {
-                "en": "rhythm module mode (microphone/AUX input) can be changed<br>removed fixed effects *Solid* and *Dynamic* for Canvas<br>fixed rhythm module information depending of connect state",
-                "de": "Steuerung des Ryhthm-Modul-Modus (Mikrofon/Aux-In) möglich<br>feste Effekte *Solid* und *Dynamic* für Canvas entfernt<br>Rhythm-Modul-Information abhängig vom Verbindungsstatus korrigiert"
-            },
-            "0.8.0": {
-                "en": "adapter has own nanoleaf-api library<br>fixed problems with Canvas<br>added compact mode<br>changed handling of device states<br>fixed command queue does not process",
-                "de": "Adapter hat eigene nanoleaf-api-Bibliothek<br>Probleme mit Canvas behoben<br>Compact mode hinzugefügt<br>Handling der Device-States geändert<br>Problem nicht abbauender Command-Queue behoben"
-            },
-            "0.7.0": {
-                "en": "compatible with nanoleaf Canvas<br>Rhythm module information is now obtained depended if it is connected or not (only Light Panels)<br>some small adjustments",
-                "de": "Kompatibilität mit nanoleaf Canvas<br>Rhythm Modul Informationen werden in Abhängigkeit des Verbindungsstatus ermittelt (nur Light Panels)<br>kleine Anpassungen"
-            },
-        	"0.6.1": {
-                "en": "fixed command processing stopping when invalid RGB value is written to 'colorRGB'<br>more error logging of invalid values send to controller<br>adjusted types and roles",
-                "de": "Stoppen der Befehlsverarbeitung gefixt, wenn ungültiger RGB-Wert auf 'colorRGB' geschrieben wird<br>Mehr Error-Logging bei Senden ungültiger Werte an Controller<br>Rollen und Typen angepasst"
-            },
-        	"0.6.0": {
-                "en": "processing commands in sequence (FIFO) ensuring that all commands are executed and avoiding hanging of the nanoleaf-controller sometimes",
-                "de": "Verarbeitung der Befehle nacheinander (FIFO) um sicherzustellen, dass alle Befehle ausgeführt werden und um teilweises Aufhängen des nanoleaf-Controllers zu verhindern"
-            },
-        	"0.5.0": {
-                "en": "automatically reconnect attemps in any case (fixes no reconnect when device hung and was restarted)<br>default minimum values for polling intervals in adapter<br>static effects 'Solid' and 'Dynamic' added to effect states<br>Saving settings in admin is only possible when all fields filled<br>optimized debug logging",
-                "de": "automatische Wiederverbindungsversuche werden jetzt immer durchgeführt (behebt keine Wiederverbindung, wenn Gerät sich aufhängt und neugestartet wird)<br>Standard Minium-Werte für Polling-Intervalle im Adapter<br>statische Effekte 'Solid' und 'Dynamic' zu den effect-States hinzugefügt<br>Einstellungen in Admin speichern nur möglich wenn alle Felder gefüllt<br>Debug-Logging optimiert"
-            },
-        	"0.4.1": {
-                "en": "added automatic testing via Travis and Appveyor<br>preparations for official repository",
-                "de": "automatisierte Test via Travis and Appveyor hinzugefügt<br>Vorbereitung für offizielles Repository"
-            },
-        	"0.4.0": {
-                "en": "Authorization token will be obtained now in the adapter settings (not on adapter start).<br>Fixed some texts in the old adapter settings (Admin2).<br>State 'effect' now contains all possible states (auto updated).<br>updated AuroraAPI version to 1.2.2",
-                "de": "Authentifizierungs-Token wird nun über die Adapter-Einstellungen angefordert (nicht mehr automatisch beim Adapterstart).<br>Fehler in Texten auf der alten Adapter-Einstellungsseite (Admin2) behoben.<br>Datenpunkt 'effect' enthält nun alle möglichen Werte (mit automatischer Aktualisierung).<br>AuroraAPI Version auf 1.2.2 aktualisiert"
-            },
-        	"0.3.0": {
-                "en": "New state ColorRGB for controlling color with hex RGB value.<br>Updating states from API only when value has changed.<br>State 'effectsList' will now be written as a semicolon seperated list to use it with 'Select ValueList' widget in ioBroker visualization.<br>Debug logging added.<br>Units for states 'saturation' and 'hue' added.",
-                "de": "Neuer Datenpunkt ColorRGB zur Seuerung der Farbe über HEX-RGB-Werte.<br>Aktualisierung der Datenpunkte über die API nur wenn der Wert sich geändert hat.<br>Datenpunkt 'effectsList' wird jetzt als Semikolon-getrennte Liste geschrieben (für die Verwendung mit dem 'Select ValueList' Widget in ioBroker Visualisierung).<br>Debug Logausgaben hinzugefügt.<br>Einheiten für die Datenpunkte 'saturation' und 'hue' hinzugefügt."
-            },
-            "0.2.0": {
-                "en": "Adjusted types and roles of states according API JSON response data types.<br>compatible with node.js 4.x.",
-                "de": "Datentypen und Rollen der Datenpunkte nach API-Referenz angepasst/korrigiert.<br>kompatibel mit node.js 4.x."
-            },
-            "0.1.0": {
-                "en": "initial version",
-                "de": "Initiale Version"
-            }
-        },
-        "title": "nanoleaf Light Panels/Canvas",
-        "desc": {
-            "en": "Controlling the nanoleaf Light Panels/Canvas (fomerly nanoleaf Aurora) in ioBroker",
-            "de": "Steuerung der nanoleaf Light Panels/Canvas (fomerly nanoleaf Aurora) in ioBroker"
-        },
-        "authors": [
-            "daniel_2k <daniel_2k@outlook.com>"
-        ],
-        "platform": "Javascript/Node.js",
-        "license": "MIT",
-        "mode": "daemon",
-        "icon": "nanoleaf-lightpanels.png",
-        "materialize": true,
-        "compact": true,
-        "enabled": true,
-        "extIcon": "https://raw.githubusercontent.com/daniel-2k/ioBroker.nanoleaf-lightpanels/master/admin/nanoleaf-lightpanels.png",
-        "keywords": [
-            "nanoleaf",
-            "light panels",
-            "canvas",
-            "aurora",
-            "light",
-            "led",
-            "rgb"
-        ],
-        "readme": "https://github.com/daniel-2k/ioBroker.nanoleaf-lightpanels/blob/master/README.md",
-        "loglevel": "info",
-        "messagebox": true,
-        "type": "lighting"
+  "common": {
+    "name": "nanoleaf-lightpanels",
+    "version": "1.0.0",
+    "news": {
+      "1.0.0": {
+        "en": "using server sent events (SSE) (available with firmware > 3.1.0) for status updates<br>support touch events for Canvas<br>searching devices in Admin is now possible<br>moved duration from native to separate state<br>some minor internal adjustments<br>removed Admin2 configuration page",
+        "de": "Server Sent Events (SSE) (ab Firmware > 3.1.0) für Statusupdates<br>Unterstützung für Canvas Touch-Events<br>Gerätesuche in Admin-Konfiguration möglich<br>Duration aus dem Native-Bereich in separaten State verlagert<br>einige kleine interne Anpassungen<br>Admin2 Konfigurationsseite entfernt"
+      },
+      "0.8.2": {
+        "en": "effects with special characters (german umlauts) can now be set (fixes HTTP error 422)<br>removed fixed effects *Solid* and *Dynamic* for all devices (works also no longer with Light Panels since firmware update)",
+        "de": "Effekte mit Umlauten werden korrekt gesetzt (behebt HTTP error 422)<br>Statische Effekte *Solid* und *Dynamic* für alle Geräte entfernt (funktioniert seit Firmware-Update auch nicht mehr bei den Light Panels)"
+      },
+      "0.8.1": {
+        "en": "rhythm module mode (microphone/AUX input) can be changed<br>removed fixed effects *Solid* and *Dynamic* for Canvas<br>fixed rhythm module information depending of connect state",
+        "de": "Steuerung des Ryhthm-Modul-Modus (Mikrofon/Aux-In) möglich<br>feste Effekte *Solid* und *Dynamic* für Canvas entfernt<br>Rhythm-Modul-Information abhängig vom Verbindungsstatus korrigiert"
+      },
+      "0.8.0": {
+        "en": "adapter has own nanoleaf-api library<br>fixed problems with Canvas<br>added compact mode<br>changed handling of device states<br>fixed command queue does not process",
+        "de": "Adapter hat eigene nanoleaf-api-Bibliothek<br>Probleme mit Canvas behoben<br>Compact mode hinzugefügt<br>Handling der Device-States geändert<br>Problem nicht abbauender Command-Queue behoben"
+      },
+      "0.7.0": {
+        "en": "compatible with nanoleaf Canvas<br>Rhythm module information is now obtained depended if it is connected or not (only Light Panels)<br>some small adjustments",
+        "de": "Kompatibilität mit nanoleaf Canvas<br>Rhythm Modul Informationen werden in Abhängigkeit des Verbindungsstatus ermittelt (nur Light Panels)<br>kleine Anpassungen"
+      },
+      "0.6.1": {
+        "en": "fixed command processing stopping when invalid RGB value is written to 'colorRGB'<br>more error logging of invalid values send to controller<br>adjusted types and roles",
+        "de": "Stoppen der Befehlsverarbeitung gefixt, wenn ungültiger RGB-Wert auf 'colorRGB' geschrieben wird<br>Mehr Error-Logging bei Senden ungültiger Werte an Controller<br>Rollen und Typen angepasst"
+      },
+      "0.6.0": {
+        "en": "processing commands in sequence (FIFO) ensuring that all commands are executed and avoiding hanging of the nanoleaf-controller sometimes",
+        "de": "Verarbeitung der Befehle nacheinander (FIFO) um sicherzustellen, dass alle Befehle ausgeführt werden und um teilweises Aufhängen des nanoleaf-Controllers zu verhindern"
+      },
+      "0.5.0": {
+        "en": "automatically reconnect attemps in any case (fixes no reconnect when device hung and was restarted)<br>default minimum values for polling intervals in adapter<br>static effects 'Solid' and 'Dynamic' added to effect states<br>Saving settings in admin is only possible when all fields filled<br>optimized debug logging",
+        "de": "automatische Wiederverbindungsversuche werden jetzt immer durchgeführt (behebt keine Wiederverbindung, wenn Gerät sich aufhängt und neugestartet wird)<br>Standard Minium-Werte für Polling-Intervalle im Adapter<br>statische Effekte 'Solid' und 'Dynamic' zu den effect-States hinzugefügt<br>Einstellungen in Admin speichern nur möglich wenn alle Felder gefüllt<br>Debug-Logging optimiert"
+      },
+      "0.4.1": {
+        "en": "added automatic testing via Travis and Appveyor<br>preparations for official repository",
+        "de": "automatisierte Test via Travis and Appveyor hinzugefügt<br>Vorbereitung für offizielles Repository"
+      },
+      "0.4.0": {
+        "en": "Authorization token will be obtained now in the adapter settings (not on adapter start).<br>Fixed some texts in the old adapter settings (Admin2).<br>State 'effect' now contains all possible states (auto updated).<br>updated AuroraAPI version to 1.2.2",
+        "de": "Authentifizierungs-Token wird nun über die Adapter-Einstellungen angefordert (nicht mehr automatisch beim Adapterstart).<br>Fehler in Texten auf der alten Adapter-Einstellungsseite (Admin2) behoben.<br>Datenpunkt 'effect' enthält nun alle möglichen Werte (mit automatischer Aktualisierung).<br>AuroraAPI Version auf 1.2.2 aktualisiert"
+      },
+      "0.3.0": {
+        "en": "New state ColorRGB for controlling color with hex RGB value.<br>Updating states from API only when value has changed.<br>State 'effectsList' will now be written as a semicolon seperated list to use it with 'Select ValueList' widget in ioBroker visualization.<br>Debug logging added.<br>Units for states 'saturation' and 'hue' added.",
+        "de": "Neuer Datenpunkt ColorRGB zur Seuerung der Farbe über HEX-RGB-Werte.<br>Aktualisierung der Datenpunkte über die API nur wenn der Wert sich geändert hat.<br>Datenpunkt 'effectsList' wird jetzt als Semikolon-getrennte Liste geschrieben (für die Verwendung mit dem 'Select ValueList' Widget in ioBroker Visualisierung).<br>Debug Logausgaben hinzugefügt.<br>Einheiten für die Datenpunkte 'saturation' und 'hue' hinzugefügt."
+      },
+      "0.2.0": {
+        "en": "Adjusted types and roles of states according API JSON response data types.<br>compatible with node.js 4.x.",
+        "de": "Datentypen und Rollen der Datenpunkte nach API-Referenz angepasst/korrigiert.<br>kompatibel mit node.js 4.x."
+      },
+      "0.1.0": {
+        "en": "initial version",
+        "de": "Initiale Version"
+      }
     },
-    "native": {
-        "port": 16021,
-        "pollingInterval": 5000,
-        "reconnectInterval": 60
+    "title": "nanoleaf Light Panels/Canvas",
+    "desc": {
+      "en": "Controlling the nanoleaf Light Panels/Canvas (fomerly nanoleaf Aurora) in ioBroker",
+      "de": "Steuerung der nanoleaf Light Panels/Canvas (fomerly nanoleaf Aurora) in ioBroker"
     },
-    "objects": [],
-    "instanceObjects": [
-        {
-            "_id": "info.connection",
-            "type": "state",
-            "common": {
-                "name": "If connected to nanoleaf device",
-                "type": "boolean",
-                "read": true,
-                "write": false,
-                "def": false,
-                "role": "indicator.connected"
-            },
-            "native": {}
-        }
-    ]
+    "authors": [
+      "daniel_2k <daniel_2k@outlook.com>"
+    ],
+    "platform": "Javascript/Node.js",
+    "license": "MIT",
+    "mode": "daemon",
+    "icon": "nanoleaf-lightpanels.png",
+    "materialize": true,
+    "compact": true,
+    "enabled": true,
+    "extIcon": "https://raw.githubusercontent.com/daniel-2k/ioBroker.nanoleaf-lightpanels/master/admin/nanoleaf-lightpanels.png",
+    "keywords": [
+      "nanoleaf",
+      "light panels",
+      "canvas",
+      "aurora",
+      "light",
+      "led",
+      "rgb"
+    ],
+    "readme": "https://github.com/daniel-2k/ioBroker.nanoleaf-lightpanels/blob/master/README.md",
+    "loglevel": "info",
+    "messagebox": true,
+    "type": "lighting",
+    "installedFrom": "iobroker.nanoleaf-lightpanels@1.0.0"
+  },
+  "native": {
+    "port": 16021,
+    "pollingInterval": 5000,
+    "reconnectInterval": 60
+  },
+  "objects": [],
+  "instanceObjects": [
+    {
+      "_id": "info.connection",
+      "type": "state",
+      "common": {
+        "name": "If connected to nanoleaf device",
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": false,
+        "role": "indicator.connected"
+      },
+      "native": {}
+    }
+  ]
 }

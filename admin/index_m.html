@@ -43,8 +43,18 @@
 
 		// handle value changes
 		$(".value").on("input", function() {
-			setStates()
-			
+			// fill port if host changes and if matching in datalist
+			if (this.id == "host")
+				$("#hostlist option").each(function() {
+					if ($("#host").val() == $(this).val()) {
+						$("#port").val($(this).attr("data-port"));
+						M.updateTextFields();
+						return false;
+					}
+				});
+
+			setStates();
+
 			// something changed, enable save buttons when all fields are filled
 			if ($("#host").val() &&		// host must be entered
 			    $("#port").val() &&		// port must be entered
@@ -52,7 +62,7 @@
 				onChange(true);
 			else onChange(false);
 		});
-		
+
 		$("#host").val(settings["host"]);
 		$("#port").val(settings["port"]);
 		$("#authtoken").val(settings["authtoken"]);
@@ -61,7 +71,43 @@
 
 		setStates();
 		onChange(false);
-		M.updateTextFields();	// function Materialize.updateTextFields(); to reinitialize all the Materialize labels on the page if you are dynamically adding inputs.
+		M.updateTextFields();
+
+		$("#searchDevice").click(function() {
+			// Check if adapter is running
+			getIsAdapterAlive("nanoleaf-lightpanels", function(alive) {
+				// adapter must be running
+				if (alive) {
+					$("#searchDevice").attr("disabled", true);	// disable button after click
+					$("#host").val("");	// empty host input when searching devices
+
+					sendTo("nanoleaf-lightpanels." + instance, "searchDevice", {}, function (devices) {
+						if (devices && devices.length > 0) {
+							devices.sort(function(a, b) { if (a.host > b.host) return 1; else return -1;});
+							// empty list
+							$("#hostlist option").remove();
+
+							// add found devices
+							for(var i = 0; i < devices.length; i++) {
+								var option = $("<option>", {value: devices[i].host, "data-port": devices[i].port});
+								$("#hostlist").append(option);
+							}
+
+							$("#searchDeviceHint").removeClass().addClass("success").text(devices.length + " " + translateWord("DevicesFound"));
+						}
+						else {
+							$("#searchDeviceHint").removeClass().addClass("error").text(translateWord("DevicesNotFound"));
+						}
+
+						$("#searchDevice").attr("disabled", false);	// enable button after callback
+					});
+
+					$("#searchDeviceHint").removeClass().text(translateWord("searchingDevices"));
+				}
+				else
+					showMessage("<p>" + translateWord("AdapterNotAlive") + "</p>", translateWord("AdapterStateTitle"), "info");
+			});
+		});
 
 		$("#getAuthToken").click(function() {
 			// Check if adapter is running
@@ -74,15 +120,15 @@
 					hostConfig.host = $("#host").val();
 					hostConfig.port = $("#port").val();
 
-					sendTo("nanoleaf-lightpanels." + instance, "getAuthToken", hostConfig, function (message) {
-						if (message.success) {
-							$("#authtoken").val(message.authToken).trigger("focus");
+					sendTo("nanoleaf-lightpanels." + instance, "getAuthToken", hostConfig, function (response) {
+						if (response.message == "SuccessGetAuthToken") {
+							$("#authtoken").val(response.authToken).trigger("focus");
 							$("#getAuthToken").attr("disabled", true);
 							$("#getAuthTokenHint").removeClass().addClass("success").text(translateWord("SuccessGetAuthToken"));
 							onChange(true);
 						}
 						else {
-							showMessage("<p>" + translateWord(message.message) + "</p>", translateWord("ErrorGetAuthTokenTitle"), "info");
+							showMessage("<p>" + translateWord(response.message) + "</p>", translateWord("ErrorGetAuthTokenTitle"), "info");
 							$("#getAuthToken").attr("disabled", false);	// enable on error
 							$("#getAuthTokenHint").removeClass().text("");
 						}
@@ -98,13 +144,13 @@
 
 	function save(callback) {
 		var obj = {};
-		
+
 		obj["host"] = $("#host").val();
 		obj["port"] = $("#port").val();
 		obj["authtoken"] = $("#authtoken").val();
 		obj["pollingInterval"] = $("#pollingInterval").val();
 		obj["reconnectInterval"] = $("#reconnectInterval").val();
-		
+
 		callback(obj);
 	}
 
@@ -127,9 +173,12 @@
 				</div>
 				<div class="row">
 					<div class="input-field col s12 m6 l3">
-						<input type="text" class="value" id="host">
+						<input type="text" list="hostlist" id="host" class="value">
 						<label for="host" class="translate">HostIP</label>
+						<datalist id="hostlist"></datalist>
 						<span class="translate">HostIPDesc</span>
+						<p><a class="waves-effect waves-light btn" id="searchDevice"><span class="translate">searchDevice</span></a></p>
+						<span id="searchDeviceHint"></span>
 					</div>
 					<div class="input-field col s12 m6 l3">
 						<input type="number" class="value" id="port" value="16021" />
@@ -140,8 +189,8 @@
 						<input type="text" class="value" id="authtoken" >
 						<label for="authtoken" class="translate">AuthToken</label>
 						<span class="translate">AuthTokenDesc</span>
-						<p><a class="waves-effect waves-light btn" id="getAuthToken" disabled><span class="translate">GetAuthToken</span></a>
-							<span id="getAuthTokenHint"></span></p>
+						<p><a class="waves-effect waves-light btn" id="getAuthToken" disabled><span class="translate">GetAuthToken</span></a></p>
+						<span id="getAuthTokenHint"></span>
 					</div>
 				</div>
 				<div class="row">

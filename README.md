@@ -46,6 +46,14 @@ You can use the nanoleaf vis demo project found in the /vis subfolder on github.
 
 ## Changelog
 
+### 1.0.0 (2020-06-18)
+* (daniel_2k) new: using server sent events (SSE) for getting updates instead of polling (firmware > 3.1.0 required)
+* (daniel_2k) new: support touch events for Canvas
+* (daniel_2k) new: searching devices in Admin is now possible
+* (daniel_2k) changed: moved duration for brightness state to separate state (please note: duration of in native part of brightness state will no longer work)
+* (daniel_2k) changed: some minor internal adjustments
+* (daniel_2k) changed: removed Admin2 configuration page
+
 ### 0.8.2 (2019-08-02)
 * (daniel_2k) fixed: effects with special characters (german umlauts) can now be set (fixes HTTP error code 422)
 * (daniel_2k) changed: removed fixed effects *Solid* and *Dynamic* for all devices (works also no longer with Light Panels since firmware update)

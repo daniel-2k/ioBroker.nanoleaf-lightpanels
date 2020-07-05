@@ -8,24 +8,38 @@ let adapter;
 
 // constants
 const http = require("http");
+const SSDP = require("node-upnp-ssdp");
+const dns = require("dns");
+const net = require("net");
+const { clear } = require("console");
 const AuroraApi = require(__dirname + "/lib/nanoleaf-aurora-api");
-const minPollingInterval = 500;			// milliseconds
-const minReconnectInterval = 10;		// seconds
+const stateExcludes = ["brightness_duration"];	// Exclude list for states
+const MSEARCH_ST = "nanoleaf_aurora:light";		// nanoleaf SSDP service type
+const SSDP_ST = [MSEARCH_ST, "nanoleaf:nl29"];	// nanoleaf SSDP service type
+const minPollingInterval = 500;					// milliseconds
+const minReconnectInterval = 10;				// seconds
 const defaultTimeout = 10000;
+const keepAliveInterval = 75000;				// interval in ms when device is not alive anymore
+const ssdp_mSearchTimeout = 5000;				// time to wait for getting SSDP answers for a MSEARCH
 
 // nanoleaf device definitions
 const nanoleafDevices = {lightpanels: {model: "NL22", deviceName: "LightPanels", name: "Light Panels"}, canvas: {model: "NL29", deviceName: "Canvas", name: "Canvas" }};
 
 // variables
 let auroraAPI;							// Instance of auroraAPI-Client
+let isConnected;						// indicates connection to device (same value as info.connection state)
 let lastError;							// keeps the last error occurred
 let commandQueue = [];					// Array for all state changes (commands) to process (Queue)
 let commandQueueProcessing = false;		// flag to show that command queue processing is in progress
 let NLdevice;							// holds the nanoleaf device type which will be processed
+let NL_UUID;							// UUID of NL device received via SSDP
+let SSDP_devices = [];					// list of devices found via SSDP MSEARCH
 
 // Timers
 let pollingTimer;
 let connectTimer;
+let keepAliveTimer;
+let SSDP_mSearchTimer;
 
 let pollingInterval;
 let reconnectInterval;
@@ -50,6 +64,8 @@ function startAdapter(options) {
 			adapter.log.info("Shutting down Nanoleaf adapter \"" + adapter.namespace + "\"...");
 			StopPollingTimer();
 			StopConnectTimer();
+			SSDP.close();
+			auroraAPI.stopSSE();
 			callback();
 		}
 		catch (e) {
@@ -62,17 +78,33 @@ function startAdapter(options) {
 		adapter.log.debug("Incoming adapter message: " + obj.command);
 
 		switch (obj.command) {
-			case "getAuthToken":	getAuthToken(obj.message.host, obj.message.port, function (success, message) {
-										let messageObj = {};
-										messageObj.success = success;
+			case "getAuthToken":	adapter.log.info("Try to obtain authorization token from \"" + obj.message.host + ":" + obj.message.port + "\" (device has to be in pairing mode!)");
 
-										if (success) {
+									let messageObj = {};
+
+									AuroraApi.getAuthToken(obj.message.host, obj.message.port)
+										.then(function(authToken) {
 											messageObj.message = "SuccessGetAuthToken";
-											messageObj.authToken = message;
-										}
-										else messageObj.message = message;
+											messageObj.authToken = authToken;
 
-										if (obj.callback) adapter.sendTo(obj.from, obj.command, messageObj, obj.callback);
+											adapter.log.info("Got new Authentication Token: \"" + authToken + "\"");
+										})
+										.catch(function(error) {
+											messageObj.message = error.errorCode;
+
+											adapter.log.error(error.message);
+											if (error.messageDetail) adapter.log.debug(error.messageDetail);
+										})
+										.finally(function() {
+											if (obj.callback) adapter.sendTo(obj.from, obj.command, messageObj, obj.callback);
+										});
+									break;
+			case "searchDevice":	SSDP_mSearch(function (devices) {
+										adapter.log.debug("MSEARCH: " + devices.length + " devices found!");
+
+										SSDP_mSearchTimer = null;
+
+										if (obj.callback) adapter.sendTo(obj.from, obj.command, devices, obj.callback);
 									});
 									break;
 			default:				adapter.log.debug("Invalid adapter message send: " + obj);
@@ -87,9 +119,9 @@ function startAdapter(options) {
 		// acknowledge false for command
 		if (state && !state.ack) {
 			let stateID = id.split(".");
-			// get Statename
+			// get state name
 			let stateName = stateID.pop();
-			// get Devicename
+			// get device name
 			let DeviceName = stateID.pop();
 
 			if (DeviceName == NLdevice || DeviceName == "Rhythm") {
@@ -148,19 +180,19 @@ function processCommandQueue() {
 										processCommandQueue();
 									});
 							break;
-		// Brithness
-		case "brightness":	adapter.getObject(NLdevice + ".brightness", function(err, obj) {
+		// Brightness
+		case "brightness":	adapter.getState(NLdevice + ".brightness_duration", function(err, obj) {
 								let duration = 0;
 
-								if (err) adapter.log.error("Error while reading brightness object: " + err);
-								else if (obj && obj.native && Number.isInteger(obj.native.duration)) duration = obj.native.duration;
+								if (err) adapter.log.error("Error while reading 'brightness_duration' object: " + err);
+								else if (Number.isInteger(obj.val)) duration = obj.val;
 
 								auroraAPI.setBrightness(parseInt(state.val), duration) // parseInt to fix vis colorPicker
 									.then(function() {
-										adapter.log.debug("OpenAPI: Brightness set to " + state.val);
+										adapter.log.debug("OpenAPI: Brightness set to " + state.val + " with duration of " + duration + " seconds");
 									})
 									.catch(function(err) {
-										logApiError("OpenAPI: Error while setting brightness value " + state.val, err);
+										logApiError("OpenAPI: Error while setting brightness value " + state.val + " with duration of " + duration + " seconds", err);
 									})
 									.then(function() {
 										processCommandQueue();
@@ -191,13 +223,13 @@ function processCommandQueue() {
 									processCommandQueue();
 								});
 							break;
-		// Color Temeperature
+		// Color Temperature
 		case "colorTemp":	auroraAPI.setColourTemperature(state.val)
 								.then(function() {
 									adapter.log.debug("OpenAPI: Color temperature set to " + state.val);
 								})
 								.catch(function(err) {
-									logApiError("OpenAPI: Error while setting color temeperature " + state.val, err);
+									logApiError("OpenAPI: Error while setting color temperature " + state.val, err);
 								})
 								.then(function() {
 									processCommandQueue();
@@ -234,7 +266,7 @@ function processCommandQueue() {
 									processCommandQueue();
 								});
 							break;
-		// Indentify
+		// Identify
 		case "identify":	auroraAPI.identify()
 								.then(function() {
 									adapter.log.debug("OpenAPI: Identify panels enabled!");
@@ -258,8 +290,8 @@ function processCommandQueue() {
 								processCommandQueue();
 							});
 							break;
-		// no valid command -> skip
-		default: 			adapter.log.warn("Command for state \"" + stateName + "\ invalid, skipping...");
+		// no valid command -> skip and warn if not in exclude list
+		default: 			if (!stateExcludes.includes(stateName)) adapter.log.warn("Command for state \"" + stateName + "\ invalid, skipping...");
 							processCommandQueue();
 		}
 }
@@ -277,11 +309,11 @@ function clearCommandQueue() {
  */
 function HSVtoRGB(hue, saturation, value) {
 	let h, i, f, s, v, p, q, t, r, g, b;
-	
+
 	s = saturation / 100;
 	v = value / 100;
-	
-	if (s == 0) // achromatisch (Grau)
+
+	if (s == 0) // achromatic (Gray)
 		r = g = b = v;
 	else {
 		h = hue / 60;
@@ -309,46 +341,88 @@ function HSVtoRGB(hue, saturation, value) {
 
 // convert RGB hex string to decimal RGB components object
 function RGBHEXtoRGBDEC(RGBHEX) {
-	let patt = new RegExp("^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$", "i");
+	let pattern = new RegExp("^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$", "i");
 	let RGBDEC = {};
 	let res;
-		
-	if (res = patt.exec(RGBHEX.trim())) {
+
+	if (res = pattern.exec(RGBHEX.trim())) {
 		RGBDEC.R =  parseInt(res[1], 16);
 		RGBDEC.G =  parseInt(res[2], 16);
 		RGBDEC.B =  parseInt(res[3], 16);
-		
+
 		return RGBDEC;
 	}
 	else
 		return null;
 }
 
+function parseDeviceURL(URL) {
+	let pattern = new RegExp("http:\/\/([0-9a-zA-Z\.]+):([0-9]{1,5})", "gi");
+	let res = pattern.exec(URL);
+	let devInfo;
+
+	if (res && res.length == 3) {
+		devInfo = {};
+		devInfo.host = res[1];
+		devInfo.port = res[2];
+	}
+	return devInfo;
+}
+
 function StartPollingTimer() {
 	pollingTimer = setTimeout(statusUpdate, pollingInterval);
+	adapter.log.debug("Polling timer started with " + pollingInterval + " ms");
 }
 
 function StopPollingTimer() {
-	adapter.log.debug("Polling timer stopped!");
 	clearTimeout(pollingTimer);
 	pollingTimer = null;
+	adapter.log.debug("Polling timer stopped!");
 }
 
 function StartConnectTimer(isReconnect) {
 	connectTimer = setTimeout(connect, reconnectInterval * 1000, isReconnect);
+	adapter.log.debug("Connect timer started with " + reconnectInterval * 1000 + " ms");
 }
 
 function StopConnectTimer() {
-	adapter.log.debug("Connect timer stopped!");
 	clearTimeout(connectTimer);
 	connectTimer = null;
+	adapter.log.debug("Connect timer stopped!");
+}
+
+function resetKeepAliveTimer() {
+	clearTimeout(keepAliveTimer);
+	keepAliveTimer = setTimeout(function() {
+		reconnect("No ssdp:alive detected");
+	}, keepAliveInterval);
+}
+
+// subscribe states changes on NLdevice using server sent events
+function startSSE() {
+	auroraAPI.startSSE(function (data, error) {
+			if (error) adapter.log.error(error);
+			else statusUpdate(data);
+		})
+		.then(function () {
+			adapter.log.debug("SSE subscription started, listening...");
+		})
+		.catch(function (error) {
+			throw error;
+		});
+}
+
+// close SSE connection
+function stopSSE() {
+	auroraAPI.stopSSE();
+	adapter.log.debug("SSE connection closed!");
 }
 
 function formatError(err) {
 	if (!err) return "Error: unknown";
-	
+
 	let message = err;
-		
+
 	if (Number.isInteger(err)) {
 		message = "HTTP status " + err;
 		switch (err) {
@@ -364,18 +438,18 @@ function formatError(err) {
 	else {
 		if (/ECONNRESET/i.test(err.code))
 		message += " (Timeout)";
-		
+
 		if (!/error/i.test(err))
 			message = "Error: " + message
 	}
-	
+
 	return message;
 }
 
 // logging of actions via API. Only bad requests or unprocessable entity (invalid data supplied) logs error, all other only in debug
 function logApiError(msg, err) {
 	let errormsg = msg + ", " + formatError(err);
-	
+
 	if (Number.isInteger(err)) {
 		switch (err) {
 			case 400:	adapter.log.error(errormsg); break;
@@ -388,42 +462,93 @@ function logApiError(msg, err) {
 }
 
 // Update states via polling
-function statusUpdate() {
-	auroraAPI.getInfo()
-		.then(function(info) {
-			StartPollingTimer();	// restart polling timer for next update
-			// update States
-			writeStates(JSON.parse(info));
-		})
-		.catch(function(err) {
-			adapter.log.debug("Updating states failed: " + formatError(err));
-			stopAdapterProcessing();
-			adapter.setState("info.connection", false, true);			// set disconnect state
-			adapter.log.warn("Connection to \"" + auroraAPI.host + ":" + auroraAPI.port + "\" lost, " + formatError(err) + ". Try to reconnect...");
-			lastError = err;
-			StartConnectTimer(true);									// start connect timer
-		});
+function statusUpdate(data) {
+	// full update via polling
+	if (pollingTimer)
+		auroraAPI.getInfo()
+			.then(function(info) {
+				StartPollingTimer();	// restart polling timer for next update
+				// update States
+				writeStates(JSON.parse(info));
+			})
+			.catch(function(err) {
+				adapter.log.debug("Updating states failed: " + formatError(err));
+				reconnect(err);
+			});
+	// Update via SSE
+	else  {
+		var updateColorRGB = false;
+
+		for (var event of data.events) {
+			switch(data.eventID) {
+				case AuroraApi.Events.state: 	switch (event.attr) {
+													case AuroraApi.StateAttributes.on: 			writeState("state", event.value);
+																								break;
+													case AuroraApi.StateAttributes.brightness: 	writeState("brightness", event.value);
+																								updateColorRGB = true;
+																								break;
+													case AuroraApi.StateAttributes.hue: 		writeState("hue", event.value);
+																								updateColorRGB = true;
+																								break;
+													case AuroraApi.StateAttributes.saturation:	writeState("saturation", event.value);
+																								updateColorRGB = true;
+																								break;
+													case AuroraApi.StateAttributes.cct: 		writeState("colorTemp", event.value);
+																								break;
+													case AuroraApi.StateAttributes.colorMode: 	writeState("colorMode", event.value);
+																								break;
+													default: 									adapter.log.warn("Attribute " + event.attribute + " is not implemented. Please report that to the developer!");
+												}
+												break;
+				case AuroraApi.Events.effects:	writeState("effect", event.value);
+												break;
+				case AuroraApi.Events.touch:	writeState("touch.gesture", event.gesture);
+												writeState("touch.panelID", event.panelId);
+												break;
+				default: adapter.log.warn("Invalid eventID '" + data.eventID + "' received from device. Please report that to the developer!");
+			}
+		}
+		// update colorRGB if colorMode = hs if necessary
+		if (updateColorRGB) {
+			// read  old state
+			adapter.getStates(NLdevice + ".*", function (err, states) {
+				if (err) adapter.log.error("Error reading States from '" + NLdevice + "' " + err + ". No Update of 'colorRGB'!");
+				else {
+					if (states[adapter.namespace + "." + NLdevice + ".colorMode"].val == "hs")
+						writeState("colorRGB", HSVtoRGB(states[adapter.namespace + "." + NLdevice + ".hue"].val,
+														states[adapter.namespace + "." + NLdevice + ".saturation"].val,
+														states[adapter.namespace + "." + NLdevice + ".brightness"].val));
+				}
+			});
+		}
+	}
+}
+
+// write single State
+function writeState(stateName, newState) {
+	// read  old state
+	adapter.getState(NLdevice + "." + stateName, function (err, oldState) {
+		if (err) adapter.log.error("Error reading state '" + NLdevice + "." + stateName + "': " + err + ". State will not be updated!");
+		else setChangedState(NLdevice + "." + stateName, oldState, newState);
+	});
 }
 
 // write States
 function writeStates(newStates) {
 	// read all old states
-	adapter.getStates("*", function (err, oldStates) {		
-		if (err) {
-			adapter.log.error("Error reading states: " + err + ". Update polling stopped!");
-			StopPollingTimer();		// stop polling because something is wrong
-		}
+	adapter.getStates("*", function (err, oldStates) {
+		if (err) throw "Error reading states: " + err + "!";
 		else {
-			setChangedState(NLdevice + ".state", 		oldStates[adapter.namespace + "." + NLdevice + ".state"]		, newStates.state.on.value);
-			setChangedState(NLdevice + ".brightness", 	oldStates[adapter.namespace + "." + NLdevice + ".brightness"], newStates.state.brightness.value);
-			setChangedState(NLdevice + ".hue",			oldStates[adapter.namespace + "." + NLdevice + ".hue"]		, newStates.state.hue.value);
-			setChangedState(NLdevice + ".saturation", 	oldStates[adapter.namespace + "." + NLdevice + ".saturation"], newStates.state.sat.value);
-			setChangedState(NLdevice + ".colorTemp",	oldStates[adapter.namespace + "." + NLdevice + ".colorTemp"]	, newStates.state.ct.value);
+			setChangedState(NLdevice + ".state", 		oldStates[adapter.namespace + "." + NLdevice + ".state"], 		newStates.state.on.value);
+			setChangedState(NLdevice + ".brightness", 	oldStates[adapter.namespace + "." + NLdevice + ".brightness"],	newStates.state.brightness.value);
+			setChangedState(NLdevice + ".hue",			oldStates[adapter.namespace + "." + NLdevice + ".hue"], 		newStates.state.hue.value);
+			setChangedState(NLdevice + ".saturation", 	oldStates[adapter.namespace + "." + NLdevice + ".saturation"], 	newStates.state.sat.value);
+			setChangedState(NLdevice + ".colorTemp",	oldStates[adapter.namespace + "." + NLdevice + ".colorTemp"], 	newStates.state.ct.value);
 			// write RGB color only when colorMode is 'hs'
 			if (newStates.state.colorMode === "hs")
-				setChangedState(NLdevice + ".colorRGB",	oldStates[adapter.namespace + "." + NLdevice + ".colorRGB"]	, HSVtoRGB(newStates.state.hue.value, newStates.state.sat.value, newStates.state.brightness.value));
-			setChangedState(NLdevice + ".colorMode",	oldStates[adapter.namespace + "." + NLdevice + ".colorMode"]	, newStates.state.colorMode);
-			setChangedState(NLdevice + ".effect",		oldStates[adapter.namespace + "." + NLdevice + ".effect"]	, newStates.effects.select);
+				setChangedState(NLdevice + ".colorRGB",	oldStates[adapter.namespace + "." + NLdevice + ".colorRGB"], 	HSVtoRGB(newStates.state.hue.value, newStates.state.sat.value, newStates.state.brightness.value));
+			setChangedState(NLdevice + ".colorMode",	oldStates[adapter.namespace + "." + NLdevice + ".colorMode"], 	newStates.state.colorMode);
+			setChangedState(NLdevice + ".effect",		oldStates[adapter.namespace + "." + NLdevice + ".effect"], 		newStates.effects.select);
 
 			let effectsArray = newStates.effects.effectsList;
 			let effectsList;
@@ -452,11 +577,11 @@ function writeStates(newStates) {
 					}
 				}
 			});
-			
-			setChangedState(NLdevice + ".info.name",			oldStates[adapter.namespace + "." + NLdevice + ".info.name"]				, newStates.name);
-			setChangedState(NLdevice + ".info.serialNo",		oldStates[adapter.namespace + "." + NLdevice + ".info.serialNo"]			, newStates.serialNo);
-			setChangedState(NLdevice + ".info.firmwareVersion", oldStates[adapter.namespace + "." + NLdevice + ".info.firmwareVersion"]	, newStates.firmwareVersion);
-			setChangedState(NLdevice + ".info.model",			oldStates[adapter.namespace + "." + NLdevice + ".info.model"]			, newStates.model);
+
+			setChangedState(NLdevice + ".info.name",			oldStates[adapter.namespace + "." + NLdevice + ".info.name"], 			newStates.name);
+			setChangedState(NLdevice + ".info.serialNo",		oldStates[adapter.namespace + "." + NLdevice + ".info.serialNo"],		newStates.serialNo);
+			setChangedState(NLdevice + ".info.firmwareVersion", oldStates[adapter.namespace + "." + NLdevice + ".info.firmwareVersion"],newStates.firmwareVersion);
+			setChangedState(NLdevice + ".info.model",			oldStates[adapter.namespace + "." + NLdevice + ".info.model"],			newStates.model);
 
 			// Rhythm module only available with nanoleaf Light-Panels, Canvas has built in module and here we get no info about Rhythm
 			if (typeof newStates.rhythm === "object") {
@@ -510,72 +635,14 @@ function setChangedState(stateID, oldState, newStateValue) {
 	}
 }
 
-// automatically obtain an auth token when device is in pairing mode
-function getAuthToken(address, port, callback) {
-	adapter.log.info("Try to obtain authorization token from \"" + address + ":" + port + "\" (device has to be in pairing mode!)");
-	
-	const options = {
-		hostname: address,
-		port: port,
-		path: "/api/v1/new",
-		method: "POST",
-		timeout: defaultTimeout
-	};
-	
-	const req = http.request(options, (res) => {
-		const statusCode = res.statusCode;
-		const contentType = res.headers['content-type'];
+// sends a SSDP mSearch to discover nanoleaf devices
+function SSDP_mSearch(callback) {
+	// clear device list
+	SSDP_devices = [];
 
-		adapter.log.debug(formatError(statusCode));
-
-		switch (statusCode) {
-			case 200:	if (!/^application\/json/.test(contentType)) {
-							adapter.log.debug("Invalid content-type. Expected \"application/json\" but received " + contentType);
-							adapter.log.error("Error obtaining authorization token!");
-							if (callback) callback(false, "ErrorJSON");
-							return;
-						}
-						break;
-			case 401:	adapter.log.error("Getting authorization token failed because access is unauthorized (is the device in pairing mode?)");
-						if (callback) callback(false, "ErrorUnauthorized");
-						return;
-			case 403:	adapter.log.error("Getting authorization token failed because permission denied (is the device in pairing mode?)");
-						if (callback) callback(false, "ErrorUnauthorized");
-						return;
-			default:	adapter.log.error("Connection to \"" + address + ":" + port +  "\" failed: " + formatError(statusCode));
-						if (callback) callback(false, "ErrorConnection");
-						return;
-		}
-		
-		let rawData = "";
-		res.on("data", (chunk) => { rawData += chunk; });
-		res.on("end", () => {
-			try {
-				const parsedData = JSON.parse(rawData);
-				if (parsedData["auth_token"]) {
-					adapter.log.info("Got new Authentification Token: \"" + parsedData["auth_token"] + "\"");
-					if (callback) callback(true, parsedData["auth_token"]);
-				}
-				else {
-					adapter.log.debug("JOSN response does not contain an \"auth_token\"");
-					adapter.log.error("No authorization token found!");
-					if (callback) callback(false, "NoAuthTokenFound");
-				}
-			}
-			catch (err) {
-				adapter.log.debug("Error JOSN parsing received data: " + formatError(err));
-				adapter.log.error("No authorization token found!");
-				if (callback) callback(false, "NoAuthTokenFound");
-			}
-		});
-	});
-	
-	req.on("error", (err) => {
-		adapter.log.error("Connection to \"" + address + ":" + port + "\" failed, " + formatError(err));
-		if (callback) callback(false, "ErrorConnection");
-	});
-			
-	req.end();
+	SSDP.mSearch(MSEARCH_ST);
+	// start timer for collecting SSDP responses
+	SSDP_mSearchTimer = setTimeout(callback, ssdp_mSearchTimeout, SSDP_devices);
 }
 
 // Create nanoleaf device
@@ -719,21 +786,34 @@ function createNanoleafDevice(deviceInfo, callback) {
 					"role": "level.dimmer",
 					"desc": "Brightness level in %"
 				},
-				"native": { "duration": 0 }
-			},
-			// set new native value "duration" if not existing (for older versions)
-			function (){
-				adapter.getObject(NLdevice + ".brightness", function(err, obj) {
-					if (err) adapter.log.error("Error while reading brightness object: " + err);
-					else {
-						if (!obj.native || !obj.native.duration) {
-							obj.native = { duration: 0 };
-							adapter.setObject(NLdevice + ".brightness", obj, function(err, obj) {
-								if (err) adapter.log.error("Error while setting brightness object: " + err);
-							});
-						}
-					}
-				});
+				"native": {}
+			}
+		);
+		// remove duration from brightness object (upgrade from older versions)
+		adapter.getObject(NLdevice + ".brightness", function (err, obj) {
+			if (err) throw err;
+			if (obj != null && typeof obj.native.duration !== "undefined") {
+				delete obj.native.duration;
+				adapter.setObject(NLdevice + ".brightness", obj, function (err) { if (err) throw err; });
+			}
+		});
+		// create "brightness duration" state
+		adapter.setObjectNotExists (NLdevice + ".brightness_duration",
+			{
+				"type": "state",
+				"common": {
+					"name": "Brightness duration",
+					"type": "number",
+					"unit": "sec",
+					"def": 0,
+					"min": 0,
+					"max": 60,
+					"read": true,
+					"write": true,
+					"role": "level.dimmer",
+					"desc": "Brightness transition duration in seconds"
+				},
+				"native": {}
 			}
 		);
 		// create "hue" state
@@ -854,6 +934,66 @@ function createNanoleafDevice(deviceInfo, callback) {
 				"native": {}
 			}
 		);
+		// touch event only for Canvas
+		if (NLdevice == nanoleafDevices.canvas.deviceName) {
+			// create "touch" Channel
+			adapter.setObjectNotExists (NLdevice + ".touch",
+				{
+					"type": "channel",
+					"common": {
+						"name": nameProp + " Touch event"
+					},
+					"native": {}
+				}
+			);
+			// create touch "gesture" state
+			adapter.setObjectNotExists (NLdevice + ".touch.gesture",
+				{
+					"type": "state",
+					"common": {
+						"name": "Gesture of touch event",
+						"type": "number",
+						"read": true,
+						"write": false,
+						"role": "value",
+						"states" : {
+							0 : "Single Tap",
+							1 : "Double Tap",
+							2 : "Swipe Up",
+							3 : "Swipe Down",
+							4 : "Swipe Left",
+							5 : "Swipe Right"
+						}
+					},
+					"native": {}
+				}
+			);
+			// create touch "panelID" state
+			adapter.setObjectNotExists (NLdevice + ".touch.panelID",
+				{
+					"type": "state",
+					"common": {
+						"name": "Panel ID of touch event",
+						"type": "number",
+						"read": true,
+						"write": false,
+						"role": "value"
+					},
+					"native": {}
+				}
+			);
+		}
+		else {
+			adapter.getObject(NLdevice + ".touch", function (err, obj) {
+				if (err) throw err;
+				// if existent, delete it
+				if (obj != null) {
+					adapter.log.debug("No Canvas, delete 'touch' event channel");
+
+					adapter.deleteChannel(NLdevice, "touch");
+				}
+			});
+		}
 		// create "identify" state
 		adapter.setObjectNotExists (NLdevice + ".identify",
 			{
@@ -1069,16 +1209,37 @@ function startAdapterProcessing(deviceInfo) {
 	// state changes of nanoleaf device and rhythmMode is subscribed
 	adapter.subscribeStates(NLdevice + ".*");
 	adapter.subscribeStates("Rhythm.rhythmMode");
-	// start polling timer for updates
-	StartPollingTimer();
-	adapter.log.debug("Polling timer startet with " + pollingInterval + " ms");
+
+	// use SSE instead of polling for firmware version > 3.1.0
+	if (deviceInfo.firmwareVersion > "3.1.0") {
+		startSSE();
+		resetKeepAliveTimer();
+	}
+	else
+		// start polling timer for updates
+		StartPollingTimer();
 }
 
 function stopAdapterProcessing() {
 	StopPollingTimer();
 	clearCommandQueue();										// stop processing commands by clearing queue
+	stopSSE();
 	adapter.unsubscribeStates(NLdevice + ".*");					// unsubscribe state changes
 	adapter.unsubscribeStates("Rhythm.rhythmMode");
+}
+
+// connection loss detected, stop adapter processing and start reconnect
+function reconnect(err) {
+	adapter.log.warn("Connection to '" + auroraAPI.host + ":" + auroraAPI.port + "' lost, " + formatError(err) + ". Try to reconnect...");
+	stopAdapterProcessing();
+	setConnectedState(false);		// set disconnect state
+	lastError = err;
+	StartConnectTimer(true);		// start connect timer
+}
+
+function setConnectedState(connected) {
+	adapter.setState("info.connection", connected, true);
+	isConnected = connected;
 }
 
 function connect(isReconnect) {
@@ -1086,8 +1247,7 @@ function connect(isReconnect) {
 	auroraAPI.getInfo()
 		.then(function(info) {
 			StopConnectTimer();
-			// set connection state to true
-			adapter.setState("info.connection", true, true);
+			setConnectedState(true);	// set connection state to true
 			adapter.log.info(((isReconnect) ? "Reconnected" : "Connected") + " to \"" + auroraAPI.host + ":" + auroraAPI.port);
 
 			let deviceInfo = JSON.parse(info);
@@ -1096,30 +1256,117 @@ function connect(isReconnect) {
 			createNanoleafDevice(deviceInfo, startAdapterProcessing);
 		})
 		.catch(function(err) {
-			let message = "Please check hostname/IP, device and connection!";
-			// is HTTP error then special error messages
-			if (Number.isInteger(err) && (err == 401 || err == 403)) message = "Permission denied, please check authorization token!"; 
+			let message = "Connection to \"" + auroraAPI.host + ":" + auroraAPI.port + "\" failed with " + formatError(err) + ". ";
+			let messageDetail = "Please check hostname/IP, device and connection!";
 
-			adapter.log.debug("Reconnect to \"" + auroraAPI.host + ":" + auroraAPI.port + "\" failed with " + formatError(err) + ", " + message);
-			
-			// log only if error changed
-			if (lastError === undefined || err.code != lastError.code) {
-				adapter.log.error("Connection to \"" + auroraAPI.host + ":" + auroraAPI.port + "\" failed, " + formatError(err) + ", " + message + ". Retry in " + adapter.config.reconnectInterval + "s intervals...");
-				lastError = err;
+			// is HTTP error
+			if (Number.isInteger(err)) {
+				// special message for 401 and 403
+				if (err == 401 || err == 403) messageDetail = "Permission denied, please check authorization token!";
+				adapter.log.error(message + messageDetail + " Stopping...");
+				adapter.stop();
 			}
-			StartConnectTimer(isReconnect);		// start reconnect timer
-			adapter.log.debug("Connect timer startet with " + reconnectInterval * 1000 + " ms");
+			// other error, try to reconnect
+			else {
+				// log only if error changed or not timeout for reconnect attempt
+				if ( (lastError === undefined || (err.code != lastError.code)) && !(isReconnect && err.code == "ETIMEDOUT") ) {
+					adapter.log.error(message + messageDetail + "Retry in " + adapter.config.reconnectInterval + "s intervals...");
+					lastError = err;
+				}
+				else adapter.log.debug(message);
+
+				StartConnectTimer(isReconnect);		// start reconnect timer
+			}
 	});
+}
+
+// init SSDP for nanoleaf (event binding)
+function initSSDP() {
+	// handle SSDP Notify messages
+	SSDP.on("DeviceAvailable:nanoleaf_aurora:light", function(data) {
+
+		adapter.log.debug("ssdp:alive NOTIFY received: " + JSON.stringify(data));
+
+		// only if connected
+		if (isConnected) {
+			// check UUID if set
+			if (NL_UUID) {
+				if (NL_UUID == data.usn) {
+					adapter.log.debug(data.usn + " matched nanoleaf device UUID! Keep alive...");
+					resetKeepAliveTimer();	// if match, keep alive
+				}
+			}
+			// if not set check device and set UUID
+			else {
+				var dev = parseDeviceURL(data.location);
+				// check device
+				if (dev) {
+					// if adapter host is IP, directly check if match
+					if (net.isIPv4(adapter.config.host)) {
+						if (dev.host == adapter.config.host) {
+							NL_UUID = data.usn;
+							adapter.log.debug("nanoleaf " + NL_UUID + " from device '" + dev.host + "' set!");
+							resetKeepAliveTimer();
+						}
+					}
+					// resolve hostname and then match
+					else {
+						dns.lookup(adapter.config.host, function(err, address) {
+							if (err) adapter.log.error("Error while looking up DNS '" + adapter.config.host + "'. Error: " + err.code + " (" + err.message + ").");
+							else if (dev.host == address) {
+								NL_UUID = data.usn;
+								adapter.log.debug("nanoleaf " + NL_UUID + " from device '" + dev.host + "' set!");
+								resetKeepAliveTimer();
+							}
+						});
+					}
+				}
+				else {
+					adapter.log.debug("Invalid location '" + data.location + "' received from device.");
+				}
+			}
+		}
+	});
+	// handle device becomes unavailable
+	SSDP.on("DeviceUnavailable:nanoleaf_aurora:light", function(data) {
+		// only if connected
+		if (isConnected) {
+			adapter.log.debug("ssdp:byebye NOTIFY received: " + JSON.stringify(data));
+			reconnect("ssdp:byebye from device received");
+		}
+	});
+
+	// handle MSEARCH responses
+	SSDP.on("DeviceFound", function(data) {
+		// only when timer for collecting devices is running
+		if (SSDP_mSearchTimer)
+			// check service name
+			if (SSDP_ST.includes(data.st)) {
+				adapter.log.debug("SSDP M-Search found device USN: " + data.usn + " with OpenAPI location: " + data.location);
+
+				// get host and port from location
+				let device = parseDeviceURL(data.location);
+				if (device) SSDP_devices.push(device);
+			}
+	});
+
+	adapter.log.debug("SSDP events initialized!");
 }
 
 function init() {
 	try {
-		// initialize timer intervals (override when intervall is to small)
+		// initialize timer intervals (override when interval is to small)
 		if (adapter.config.pollingInterval < minPollingInterval) pollingInterval = minPollingInterval;
 		else pollingInterval = adapter.config.pollingInterval;
 		if (adapter.config.reconnectInterval < minReconnectInterval) reconnectInterval = minReconnectInterval;
 		else reconnectInterval = adapter.config.reconnectInterval;
-		
+
+		initSSDP();		// fist initialize SSDP for MSEARCH events
+
+		// check mandatory settings
+		if (!adapter.config.host || !adapter.config.port || !adapter.config.authtoken)
+			throw "Please check adapter config (host, port, authorization token) first!";
+
 		// initialize Aurora API
 		auroraAPI = new AuroraApi({
 			host: adapter.config.host,
@@ -1128,27 +1375,25 @@ function init() {
 			accessToken: adapter.config.authtoken,
 			timeout: defaultTimeout
 		});
-		
+
 		// continue initialization with connecting
 		adapter.log.info("Connecting to \"" + auroraAPI.host + ":" + auroraAPI.port + "\"...");
-		connect();
+		connect(false);
 	}
-	catch(err) {
+	catch (err) {
 		adapter.log.error(err);
 	}
 }
 
 function main() {
-	// connection state false
-	adapter.setState("info.connection", false, true);
-	// connect to nanoleaf controller and test connection
-	init();
+	setConnectedState(false);	// connection state false
+	init();						// connect to nanoleaf controller and test connection
 }
 
 // If started as allInOne/compact mode => return function to create instance
 if (module && module.parent) {
 	module.exports = startAdapter;
-} else {
-	// or start the instance directly
-	startAdapter();
+}
+else {
+	startAdapter();	// or start the instance directly
 }
