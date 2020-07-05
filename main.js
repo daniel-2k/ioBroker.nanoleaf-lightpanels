@@ -1210,8 +1210,9 @@ function startAdapterProcessing(deviceInfo) {
 	adapter.subscribeStates(NLdevice + ".*");
 	adapter.subscribeStates("Rhythm.rhythmMode");
 
-	// use SSE instead of polling for firmware version > 3.1.0
-	if (deviceInfo.firmwareVersion > "3.1.0") {
+	// use SSE instead of polling for firmware lightpanels version > 3.1.0 or canvas firmware version > 1.1.0
+	if ( (deviceInfo.model == nanoleafDevices.lightpanels.model && deviceInfo.firmwareVersion > "3.1.0")  ||
+		 (deviceInfo.model == nanoleafDevices.canvas.model && deviceInfo.firmwareVersion > "1.1.0") ) {
 		startSSE();
 		resetKeepAliveTimer();
 	}

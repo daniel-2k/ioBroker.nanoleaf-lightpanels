@@ -12,16 +12,17 @@
 This is an ioBroker Adapter to control the nanoleaf Light Panels (formerly nanoleaf Aurora) or nanoleaf Canvas through the nanoleaf OpenAPI.
 
 ## Connection to the nanoleaf Light Panels/Canvas Controller:
-1. In the adapter settings you have to set the IP address and port of the nanoleaf Controller. The nanoleaf OpenAPI needs an authorization token to grant access to the REST-API. If you have already one, you can enter the token here and skip the next step.
+1. In the adapter settings you have to set the IP address and port of the nanoleaf Controller. The nanoleaf OpenAPI needs an authorization token to grant access to    the REST-API. If you have already one, you can enter the token here and skip the next step.
+   You can use the search devices function on the admin page to detect your nanoleaf devices.
 2. If you don't have an authorization token you need to request it from the nanoleaf OpenAPI.
    To do this, set the nanoleaf Controller into pairing mode by pressing and holding the power button at the device for 5-7 seconds until the LEDs flash alternately.
    Then click on the button 'Obtain authorization token' within 30 seconds (pairing mode stops after 30 seconds). The adapter must be running!
-   If it was successfull the authorization token should be seen in the field 'Authentification token'. If an error occured you get a pop up with the error message (details you can see in the log).
+   If it was successful the authorization token should be seen in the field 'Authentication token'. If an error occurred you get a pop up with the error message (details you can see in the log).
 3. Save the settings.
 4. Have fun!
 
-Because the nanoleaf OpenAPI doesn't support long polling or websockets the only way to update the states is polling.
-You can set the polling interval in the adapter settings.
+Since Light Panels firmware version > 3.1.0 and Canvas firmware version > 1.1.0 Server Sent Events (SSE) can be used for direct status updates. For Canvas devices touch events are supported.
+The setting for the status update polling interval only affects devices with lower firmware versions where polling is used for status updates.
 
 ## Alexa
 You can control the nanoleaf Light Panels/Canvas with Alexa via ioBroker (Cloud-Adapter).
@@ -45,6 +46,9 @@ To control and visualize the color you have to install the color picker style Wi
 You can use the nanoleaf vis demo project found in the /vis subfolder on github.
 
 ## Changelog
+
+### 1.0.1 (2020-07-05)
+* (daniel_2k) fixed: detection of firmware version for Canvas for enabling SSE (Canvas firmware > 1.1.0 required)
 
 ### 1.0.0 (2020-06-18)
 * (daniel_2k) new: using server sent events (SSE) for getting updates instead of polling (firmware > 3.1.0 required)
