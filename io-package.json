@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "nanoleaf-lightpanels",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "news": {
+      "1.0.2": {
+        "en": "fixed detection of ssdp:alive notify message for Canvas (fixes disconnect/connect issue)<br>fixed sending correct service type for discovery of Canvas devices (fixes no devices found for Canvas devices)<br>if unknown nanoleaf device is detected, Canvas will be used as fallback and warning will be logged<br>setting rhythmMode was not working",
+        "de": "Erkennung der ssdp:alive notify Nachrichten von Canvas gefixt (behebt Problem ständiger disconnects/connects)<br>Senden des korrekten Service Types für die Erkennung von Canvas-Geräten (behebt das keine Canvas-Geräte gefunden werden können)<br>unbekannte nanoleaf-Geräte werden als Canvas-Geräte behandelt und Warnung ausgegeben<br>Setzen des rhythmMode funktionierte nicht"
+      },
       "1.0.1": {
         "en": "fixed detection of firmware version for Canvas for using SSE",
         "de": "Erkennung Firmware-Version von Canvas für Nutzung SSE gefixt"

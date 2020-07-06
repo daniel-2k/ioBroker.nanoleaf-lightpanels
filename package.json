@@ -1,6 +1,6 @@
 {
   "name": "iobroker.nanoleaf-lightpanels",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "ioBroker Adapter to control the nanoleaf Light Panels/Canvas (formerly nanoleaf Aurora)",
   "author": {
     "name": "daniel_2k",

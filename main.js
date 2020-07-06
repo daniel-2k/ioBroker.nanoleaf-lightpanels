@@ -7,15 +7,11 @@ let utils = require(__dirname + "/lib/utils"); // Get common adapter utils
 let adapter;
 
 // constants
-const http = require("http");
 const SSDP = require("node-upnp-ssdp");
 const dns = require("dns");
 const net = require("net");
-const { clear } = require("console");
 const AuroraApi = require(__dirname + "/lib/nanoleaf-aurora-api");
 const stateExcludes = ["brightness_duration"];	// Exclude list for states
-const MSEARCH_ST = "nanoleaf_aurora:light";		// nanoleaf SSDP service type
-const SSDP_ST = [MSEARCH_ST, "nanoleaf:nl29"];	// nanoleaf SSDP service type
 const minPollingInterval = 500;					// milliseconds
 const minReconnectInterval = 10;				// seconds
 const defaultTimeout = 10000;
@@ -23,7 +19,8 @@ const keepAliveInterval = 75000;				// interval in ms when device is not alive a
 const ssdp_mSearchTimeout = 5000;				// time to wait for getting SSDP answers for a MSEARCH
 
 // nanoleaf device definitions
-const nanoleafDevices = {lightpanels: {model: "NL22", deviceName: "LightPanels", name: "Light Panels"}, canvas: {model: "NL29", deviceName: "Canvas", name: "Canvas" }};
+const nanoleafDevices = { lightpanels:	{model: "NL22", deviceName: "LightPanels", name: "Light Panels", SSDP_NT_ST: "nanoleaf_aurora:light"},
+						  canvas:		{model: "NL29", deviceName: "Canvas", name: "Canvas", SSDP_NT_ST: "nanoleaf:nl29" } };
 
 // variables
 let auroraAPI;							// Instance of auroraAPI-Client
@@ -637,12 +634,27 @@ function setChangedState(stateID, oldState, newStateValue) {
 
 // sends a SSDP mSearch to discover nanoleaf devices
 function SSDP_mSearch(callback) {
+	let msearch_st;
+
 	// clear device list
 	SSDP_devices = [];
 
-	SSDP.mSearch(MSEARCH_ST);
-	// start timer for collecting SSDP responses
-	SSDP_mSearchTimer = setTimeout(callback, ssdp_mSearchTimeout, SSDP_devices);
+	switch (NLdevice) {
+		case nanoleafDevices.lightpanels.deviceName:
+			msearch_st = nanoleafDevices.lightpanels.SSDP_NT_ST;
+			break;
+		case nanoleafDevices.canvas.deviceName:
+			msearch_st = nanoleafDevices.canvas.SSDP_NT_ST;
+			break;
+		default:
+			adapter.log.warn("Unknown device type \"" + NLdevice + "\". No search will be performed. Please report this to the developer!");
+	}
+
+	if (msearch_st) {
+		SSDP.mSearch(msearch_st);
+		// start timer for collecting SSDP responses
+		SSDP_mSearchTimer = setTimeout(callback, ssdp_mSearchTimeout, SSDP_devices);
+	}
 }
 
 // Create nanoleaf device
@@ -653,17 +665,21 @@ function createNanoleafDevice(deviceInfo, callback) {
 	let rhythmConnected = rhythmAvailable && deviceInfo.rhythm.rhythmConnected;
 
 	switch (model) {
+		// LightPanels
+		case nanoleafDevices.lightpanels.model:
+			NLdevice = nanoleafDevices.lightpanels.deviceName;
+			nameProp = nanoleafDevices.lightpanels.name;
+			break;
 		// Canvas
 		case nanoleafDevices.canvas.model:
 			NLdevice = nanoleafDevices.canvas.deviceName;
 			nameProp = nanoleafDevices.canvas.name;
 			break;
-		// LightPanels
-		case nanoleafDevices.lightpanels.model:
-		// LightPanels are fallback
+		// Canvas are fallback
 		default:
-			NLdevice = nanoleafDevices.lightpanels.deviceName;
-			nameProp = nanoleafDevices.lightpanels.name;
+			NLdevice = nanoleafDevices.canvas.deviceName;
+			nameProp = nanoleafDevices.canvas.name;
+			adapter.log.warn("nanoleaf device  \"" + model + "\" unknown! Using Canvas device as fallback. Please report this to the developer!");
 	}
 	deleteNanoleafDevices(model);	// delete all other nanoleaf device models if existing
 
@@ -1206,9 +1222,10 @@ function DeleteRhythmModuleStates() {
 function startAdapterProcessing(deviceInfo) {
 	// first states updates
 	writeStates(deviceInfo);
-	// state changes of nanoleaf device and rhythmMode is subscribed
+	// subscribe state changes of nanoleaf device
 	adapter.subscribeStates(NLdevice + ".*");
-	adapter.subscribeStates("Rhythm.rhythmMode");
+	// subscribe rhythmMode when Light Panels device
+	if (deviceInfo.model == nanoleafDevices.lightpanels.model) adapter.subscribeStates("Rhythm.rhythmMode");
 
 	// use SSE instead of polling for firmware lightpanels version > 3.1.0 or canvas firmware version > 1.1.0
 	if ( (deviceInfo.model == nanoleafDevices.lightpanels.model && deviceInfo.firmwareVersion > "3.1.0")  ||
@@ -1249,7 +1266,7 @@ function connect(isReconnect) {
 		.then(function(info) {
 			StopConnectTimer();
 			setConnectedState(true);	// set connection state to true
-			adapter.log.info(((isReconnect) ? "Reconnected" : "Connected") + " to \"" + auroraAPI.host + ":" + auroraAPI.port);
+			adapter.log.info(((isReconnect) ? "Reconnected" : "Connected") + " to \"" + auroraAPI.host + ":" + auroraAPI.port + "\"");
 
 			let deviceInfo = JSON.parse(info);
 
@@ -1281,75 +1298,87 @@ function connect(isReconnect) {
 	});
 }
 
-// init SSDP for nanoleaf (event binding)
-function initSSDP() {
-	// handle SSDP Notify messages
-	SSDP.on("DeviceAvailable:nanoleaf_aurora:light", function(data) {
+function SSDP_notify(data) {
 
-		adapter.log.debug("ssdp:alive NOTIFY received: " + JSON.stringify(data));
+	adapter.log.debug("ssdp:alive NOTIFY received: " + JSON.stringify(data));
 
-		// only if connected
-		if (isConnected) {
-			// check UUID if set
-			if (NL_UUID) {
-				if (NL_UUID == data.usn) {
-					adapter.log.debug(data.usn + " matched nanoleaf device UUID! Keep alive...");
-					resetKeepAliveTimer();	// if match, keep alive
-				}
+	// only if connected
+	if (isConnected) {
+		// check UUID if set
+		if (NL_UUID) {
+			if (NL_UUID == data.usn) {
+				adapter.log.debug(data.usn + " matched nanoleaf device UUID! Keep alive...");
+				resetKeepAliveTimer();	// if match, keep alive
 			}
-			// if not set check device and set UUID
-			else {
-				var dev = parseDeviceURL(data.location);
-				// check device
-				if (dev) {
-					// if adapter host is IP, directly check if match
-					if (net.isIPv4(adapter.config.host)) {
-						if (dev.host == adapter.config.host) {
+		}
+		// if not set check device and set UUID
+		else {
+			var dev = parseDeviceURL(data.location);
+			// check device
+			if (dev) {
+				// if adapter host is IP, directly check if match
+				if (net.isIPv4(adapter.config.host)) {
+					if (dev.host == adapter.config.host) {
+						NL_UUID = data.usn;
+						adapter.log.debug("nanoleaf " + NL_UUID + " from device '" + dev.host + "' set!");
+						resetKeepAliveTimer();
+					}
+				}
+				// resolve hostname and then match
+				else {
+					dns.lookup(adapter.config.host, function(err, address) {
+						if (err) adapter.log.error("Error while looking up DNS '" + adapter.config.host + "'. Error: " + err.code + " (" + err.message + ").");
+						else if (dev.host == address) {
 							NL_UUID = data.usn;
 							adapter.log.debug("nanoleaf " + NL_UUID + " from device '" + dev.host + "' set!");
 							resetKeepAliveTimer();
 						}
-					}
-					// resolve hostname and then match
-					else {
-						dns.lookup(adapter.config.host, function(err, address) {
-							if (err) adapter.log.error("Error while looking up DNS '" + adapter.config.host + "'. Error: " + err.code + " (" + err.message + ").");
-							else if (dev.host == address) {
-								NL_UUID = data.usn;
-								adapter.log.debug("nanoleaf " + NL_UUID + " from device '" + dev.host + "' set!");
-								resetKeepAliveTimer();
-							}
-						});
-					}
-				}
-				else {
-					adapter.log.debug("Invalid location '" + data.location + "' received from device.");
+					});
 				}
 			}
+			else {
+				adapter.log.debug("Invalid location '" + data.location + "' received from device.");
+			}
 		}
-	});
-	// handle device becomes unavailable
-	SSDP.on("DeviceUnavailable:nanoleaf_aurora:light", function(data) {
-		// only if connected
-		if (isConnected) {
-			adapter.log.debug("ssdp:byebye NOTIFY received: " + JSON.stringify(data));
-			reconnect("ssdp:byebye from device received");
-		}
-	});
+	}
+}
 
-	// handle MSEARCH responses
-	SSDP.on("DeviceFound", function(data) {
-		// only when timer for collecting devices is running
-		if (SSDP_mSearchTimer)
-			// check service name
-			if (SSDP_ST.includes(data.st)) {
-				adapter.log.debug("SSDP M-Search found device USN: " + data.usn + " with OpenAPI location: " + data.location);
+function SSDP_goodbye(data) {
+	// only if connected
+	if (isConnected) {
+		adapter.log.debug("ssdp:byebye NOTIFY received: " + JSON.stringify(data));
+		reconnect("ssdp:byebye from device received");
+	}
+}
+
+function SSDP_msearch_result(data) {
+	// only when timer for collecting devices is running
+	if (SSDP_mSearchTimer) {
+		switch(data.st) {
+			case nanoleafDevices.lightpanels.SSDP_NT_ST:
+			case nanoleafDevices.canvas.SSDP_NT_ST:
+				adapter.log.debug("SSDP M-Search found device with USN: " + data.usn + " and OpenAPI location: " + data.location);
 
 				// get host and port from location
 				let device = parseDeviceURL(data.location);
 				if (device) SSDP_devices.push(device);
-			}
-	});
+				break;
+		}
+	}
+}
+
+
+
+// init SSDP for nanoleaf (event binding)
+function initSSDP() {
+	// handle SSDP Notify messages
+	SSDP.on("DeviceAvailable:" + nanoleafDevices.lightpanels.SSDP_NT_ST, SSDP_notify);
+	SSDP.on("DeviceAvailable:" + nanoleafDevices.canvas.SSDP_NT_ST, SSDP_notify);
+	// handle device becomes unavailable
+	SSDP.on("DeviceUnavailable:" + nanoleafDevices.lightpanels.SSDP_NT_ST, SSDP_goodbye);
+	SSDP.on("DeviceUnavailable:" + nanoleafDevices.canvas.SSDP_NT_ST, SSDP_goodbye);
+	// handle MSEARCH responses
+	SSDP.on("DeviceFound", SSDP_msearch_result);
 
 	adapter.log.debug("SSDP events initialized!");
 }
