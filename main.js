@@ -656,14 +656,14 @@ function createNanoleafDevice(deviceInfo, callback) {
 	let rhythmConnected = rhythmAvailable && deviceInfo.rhythm.rhythmConnected;
 
 	switch (model) {
-		// Canvas
-		case nanoleafDevices.canvas.model:
-			NLdevice = nanoleafDevices.canvas.deviceName;
-			nameProp = nanoleafDevices.canvas.name;
-			break;
 		// LightPanels
 		case nanoleafDevices.lightpanels.model:
-		// LightPanels are fallback
+			NLdevice = nanoleafDevices.lightpanels.deviceName;
+			nameProp = nanoleafDevices.lightpanels.name;
+			break;
+		// Canvas
+		case nanoleafDevices.canvas.model:
+		// Canvas are fallback
 		default:
 			NLdevice = nanoleafDevices.canvas.deviceName;
 			nameProp = nanoleafDevices.canvas.name;
