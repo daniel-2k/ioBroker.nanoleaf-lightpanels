@@ -635,17 +635,27 @@ function setChangedState(stateID, oldState, newStateValue) {
 
 // sends a SSDP mSearch to discover nanoleaf devices
 function SSDP_mSearch(callback) {
+	let msearch_st;
+
 	// clear device list
 	SSDP_devices = [];
 
-	let msearch_st = nanoleafDevices[NLdevice].SSDP_NT_ST;
+	switch (NLdevice) {
+		case nanoleafDevices.lightpanels.deviceName:
+			msearch_st = nanoleafDevices.lightpanels.SSDP_NT_ST;
+			break;
+		case nanoleafDevices.canvas.deviceName:
+			msearch_st = nanoleafDevices.canvas.SSDP_NT_ST;
+			break;
+		default:
+			adapter.log.warn("Unknown device type \"" + NLdevice + "\". No search will be performed. Please report this to the developer!");
+	}
 
 	if (msearch_st) {
 		SSDP.mSearch(msearch_st);
 		// start timer for collecting SSDP responses
 		SSDP_mSearchTimer = setTimeout(callback, ssdp_mSearchTimeout, SSDP_devices);
 	}
-	else adapter.log.warn("Unknown device type \"" + NLdevice + "\". No search will be performed. Please report this to the developer!");
 }
 
 // Create nanoleaf device
@@ -1341,11 +1351,20 @@ function SSDP_goodbye(data) {
 function SSDP_msearch_result(data) {
 	// only when timer for collecting devices is running
 	if (SSDP_mSearchTimer) {
-		adapter.log.debug("SSDP M-Search found device with USN: " + data.usn + " and OpenAPI location: " + data.location);
 
-		// get host and port from location
-		let device = parseDeviceURL(data.location);
-		if (device) SSDP_devices.push(device);
+		// for Testing
+		adapter.log.debug("TEST: SSDP M-Search found device with USN: " + data.usn + " and location: " + data.location);
+
+		switch(data.st) {
+			case nanoleafDevices.lightpanels.SSDP_NT_ST:
+			case nanoleafDevices.canvas.SSDP_NT_ST:
+				adapter.log.debug("SSDP M-Search found device with USN: " + data.usn + " and OpenAPI location: " + data.location);
+
+				// get host and port from location
+				let device = parseDeviceURL(data.location);
+				if (device) SSDP_devices.push(device);
+				break;
+		}
 	}
 }
 
@@ -1358,15 +1377,11 @@ function initSSDP() {
 	SSDP.on("DeviceUnavailable:" + nanoleafDevices.lightpanels.SSDP_NT_ST, SSDP_goodbye);
 	SSDP.on("DeviceUnavailable:" + nanoleafDevices.canvas.SSDP_NT_ST, SSDP_goodbye);
 	// handle MSEARCH responses
-	SSDP.on("DeviceFound:" + nanoleafDevices.lightpanels.SSDP_NT_ST, SSDP_msearch_result);
-	SSDP.on("DeviceFound:" + nanoleafDevices.canvas.SSDP_NT_ST, SSDP_msearch_result);
+	SSDP.on("DeviceFound", SSDP_msearch_result);
 
 	// for Testing
 	SSDP.on("DeviceAvailable", function (data) {
-		adapter.log.debug("ssdp:alive NOTIFY received: " + JSON.stringify(data));
-	});
-	SSDP.on("DeviceFound", function (data) {
-		adapter.log.debug("Device found: " + JSON.stringify(data));
+		adapter.log.debug("TEST: ssdp:alive NOTIFY received: " + JSON.stringify(data));
 	});
 
 	adapter.log.debug("SSDP events initialized!");
