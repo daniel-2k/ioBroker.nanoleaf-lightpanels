@@ -1354,6 +1354,10 @@ function SSDP_goodbye(data) {
 function SSDP_msearch_result(data) {
 	// only when timer for collecting devices is running
 	if (SSDP_mSearchTimer) {
+
+		// for Testing
+		adapter.log.debug("TEST: SSDP M-Search: " + JSON.stringify(data));
+
 		switch(data.st) {
 			case nanoleafDevices.lightpanels.SSDP_NT_ST:
 			case nanoleafDevices.canvas.SSDP_NT_ST:
@@ -1379,6 +1383,11 @@ function initSSDP() {
 	SSDP.on("DeviceUnavailable:" + nanoleafDevices.canvas.SSDP_NT_ST, SSDP_goodbye);
 	// handle MSEARCH responses
 	SSDP.on("DeviceFound", SSDP_msearch_result);
+
+	// for Testing
+	SSDP.on("DeviceAvailable", function (data) {
+		adapter.log.debug("TEST: ssdp:alive NOTIFY received: " + JSON.stringify(data));
+	});
 
 	adapter.log.debug("SSDP events initialized!");
 }
