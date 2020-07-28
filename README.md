@@ -47,6 +47,12 @@ You can use the nanoleaf vis demo project found in the /vis subfolder on github.
 
 ## Changelog
 
+### 1.0.3 (2020-xx-xx)
+* (daniel_2k) fixed: search nanoleaf devices does not work on clean install of adapter
+* (daniel_2k) new: added update of effectsList via SSE
+* (daniel_2k) changed: display nanoleaf device name in admin search result list
+* (daniel_2k) changed: using "peer-ssdp" for SSDP processing
+
 ### 1.0.2 (2020-07-06)
 * (daniel_2k) fixed: detection of ssdp:alive notify message for Canvas (fix disconnect/connect issue)
 * (daniel_2k) fixed: sending correct service type for discovery of Canvas devices (fixes no devices found for Canvas devices)

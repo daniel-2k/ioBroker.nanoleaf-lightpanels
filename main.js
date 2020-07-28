@@ -7,7 +7,8 @@ let utils = require(__dirname + "/lib/utils"); // Get common adapter utils
 let adapter;
 
 // constants
-const SSDP = require("node-upnp-ssdp");
+const SSDP = require("peer-ssdp");
+const SSDPpeer = SSDP.createPeer();
 const dns = require("dns");
 const net = require("net");
 const AuroraApi = require(__dirname + "/lib/nanoleaf-aurora-api");
@@ -17,6 +18,7 @@ const minReconnectInterval = 10;				// seconds
 const defaultTimeout = 10000;
 const keepAliveInterval = 75000;				// interval in ms when device is not alive anymore
 const ssdp_mSearchTimeout = 5000;				// time to wait for getting SSDP answers for a MSEARCH
+const msearch_st = "ssdp:all";					// Service type for MESEARCH -> all to develop all kind of nanoleaf devices
 
 // nanoleaf device definitions
 const nanoleafDevices = { lightpanels:	{model: "NL22", deviceName: "LightPanels", name: "Light Panels", SSDP_NT_ST: "nanoleaf_aurora:light"},
@@ -51,17 +53,17 @@ function startAdapter(options) {
 	adapter = new utils.Adapter(options);
 
 	adapter.on("ready", function () {
-		adapter.log.info("Nanoleaf adapter \"" + adapter.namespace + "\" started.");
+		adapter.log.info("Nanoleaf adapter '" + adapter.namespace + "' started.");
 		main();
 	});
 
 	// is called when adapter shuts down - callback has to be called under any circumstances!
 	adapter.on("unload", function (callback) {
 		try {
-			adapter.log.info("Shutting down Nanoleaf adapter \"" + adapter.namespace + "\"...");
+			adapter.log.info("Shutting down Nanoleaf adapter '" + adapter.namespace + "'...");
 			StopPollingTimer();
 			StopConnectTimer();
-			SSDP.close();
+			SSDPpeer.close();
 			auroraAPI.stopSSE();
 			callback();
 		}
@@ -75,7 +77,7 @@ function startAdapter(options) {
 		adapter.log.debug("Incoming adapter message: " + obj.command);
 
 		switch (obj.command) {
-			case "getAuthToken":	adapter.log.info("Try to obtain authorization token from \"" + obj.message.host + ":" + obj.message.port + "\" (device has to be in pairing mode!)");
+			case "getAuthToken":	adapter.log.info("Try to obtain authorization token from '" + obj.message.host + ":" + obj.message.port + "' (device has to be in pairing mode!)");
 
 									let messageObj = {};
 
@@ -84,7 +86,7 @@ function startAdapter(options) {
 											messageObj.message = "SuccessGetAuthToken";
 											messageObj.authToken = authToken;
 
-											adapter.log.info("Got new Authentication Token: \"" + authToken + "\"");
+											adapter.log.info("Got new Authentication Token: '" + authToken + "'");
 										})
 										.catch(function(error) {
 											messageObj.message = error.errorCode;
@@ -123,7 +125,7 @@ function startAdapter(options) {
 
 			if (DeviceName == NLdevice || DeviceName == "Rhythm") {
 				commandQueue.push({stateName, state});
-				adapter.log.debug("Command \"" + stateName + "\" with value \"" + state.val + "\" added to queue! Queue length: " + commandQueue.length);
+				adapter.log.debug("Command '" + stateName + "' with value '" + state.val + "' added to queue! Queue length: " + commandQueue.length);
 
 				// start processing commands when not in progress
 				if (!commandQueueProcessing) {
@@ -150,7 +152,7 @@ function processCommandQueue() {
 	let state = nextCommand.state;
 	commandQueueProcessing = true;
 
-	adapter.log.debug("Process new command \"" + stateName + "\" with value \"" + state.val + "\" from queue. Commands remaining: " + commandQueue.length);
+	adapter.log.debug("Process new command '" + stateName + "' with value '" + state.val + "' from queue. Commands remaining: " + commandQueue.length);
 
 	switch (stateName) {
 		// Power On/Off
@@ -247,17 +249,17 @@ function processCommandQueue() {
 									});
 							}
 							else {
-								adapter.log.error("OpenAPI: set RGB color: Supplied RGB hex string \"" + state.val + "\" is invalid!");
+								adapter.log.error("OpenAPI: set RGB color: Supplied RGB hex string '" + state.val + "' is invalid!");
 								processCommandQueue();
 							}
 							break;
 		// Current effect
 		case "effect":		auroraAPI.setEffect(state.val)
 								.then(function() {
-									adapter.log.debug("OpenAPI: Effect set to \"" + state.val + "\"");
+									adapter.log.debug("OpenAPI: Effect set to '" + state.val + "'");
 								})
 								.catch(function(err) {
-									logApiError("OpenAPI: Error while setting effect \"" + state.val + "\"", err);
+									logApiError("OpenAPI: Error while setting effect '" + state.val + "'", err);
 								})
 								.then(function() {
 									processCommandQueue();
@@ -278,17 +280,17 @@ function processCommandQueue() {
 		// Rhythm Mode
 		case "rhythmMode":	auroraAPI.setRhythmMode((state.val))
 							.then(function() {
-								adapter.log.debug("OpenAPI: Rhythm mode set to \"" + state.val + "\"");
+								adapter.log.debug("OpenAPI: Rhythm mode set to '" + state.val + "'");
 							})
 							.catch(function(err) {
-								logApiError("OpenAPI: Error while setting rhythm mode \"" + state.val + "\"", err);
+								logApiError("OpenAPI: Error while setting rhythm mode '" + state.val + "'", err);
 							})
 							.then(function() {
 								processCommandQueue();
 							});
 							break;
 		// no valid command -> skip and warn if not in exclude list
-		default: 			if (!stateExcludes.includes(stateName)) adapter.log.warn("Command for state \"" + stateName + "\ invalid, skipping...");
+		default: 			if (!stateExcludes.includes(stateName)) adapter.log.warn("Command for state '" + stateName + "\ invalid, skipping...");
 							processCommandQueue();
 		}
 }
@@ -351,6 +353,16 @@ function RGBHEXtoRGBDEC(RGBHEX) {
 	}
 	else
 		return null;
+}
+
+function getDevice(host, port, name) {
+	var device = {};
+
+	device.host = host;
+	device.port = port;
+	device.name = name;
+
+	return device;
 }
 
 function parseDeviceURL(URL) {
@@ -494,10 +506,16 @@ function statusUpdate(data) {
 																								break;
 													case AuroraApi.StateAttributes.colorMode: 	writeState("colorMode", event.value);
 																								break;
-													default: 									adapter.log.warn("Attribute " + event.attribute + " is not implemented. Please report that to the developer!");
+													default: 									adapter.log.warn("Attribute '" + event.attribute + "' for event ID '" + data.eventID + "' is not implemented. Please report that to the developer!");
 												}
 												break;
-				case AuroraApi.Events.effects:	writeState("effect", event.value);
+				case AuroraApi.Events.effects:	switch (event.attr) {
+													case AuroraApi.EventAttributes.event:		writeState("effect", event.value);
+																								break;
+													case AuroraApi.EventAttributes.eventList:	updateEventList(event.value);
+																								break;
+													default: 									adapter.log.warn("Attribute '" + event.attribute + "' for event ID '" + data.eventID + "' is not implemented. Please report that to the developer!");
+												}
 												break;
 				case AuroraApi.Events.touch:	writeState("touch.gesture", event.gesture);
 												writeState("touch.panelID", event.panelId);
@@ -547,33 +565,7 @@ function writeStates(newStates) {
 			setChangedState(NLdevice + ".colorMode",	oldStates[adapter.namespace + "." + NLdevice + ".colorMode"], 	newStates.state.colorMode);
 			setChangedState(NLdevice + ".effect",		oldStates[adapter.namespace + "." + NLdevice + ".effect"], 		newStates.effects.select);
 
-			let effectsArray = newStates.effects.effectsList;
-			let effectsList;
-			let effectsStates = {};
-
-			// loop through effectsList and write it as semicolon separated string and new states object
-			for (let i = 0; i < effectsArray.length; i++) {
-				if (effectsList)
-					effectsList += ";" + effectsArray[i];
-				else
-					effectsList = effectsArray[i];
-				effectsStates[effectsArray[i]] = effectsArray[i];
-			}
-			setChangedState(NLdevice + ".effectsList", 	oldStates[adapter.namespace + "." + NLdevice + ".effectsList"], effectsList);
-			// updating states of effect if changed
-			adapter.getObject(NLdevice + ".effect", function (err, obj) {
-				if (err) adapter.log.debug("Error getting \"" + effectObject + "\": " + err);
-				else {
-					// only if list has changed
-					if (JSON.stringify(effectsStates) !== JSON.stringify(obj.common.states)) {
-						adapter.log.debug("Update from OpenAPI: possible states for state \"effect\" changed >>>> set new states: " + JSON.stringify(effectsArray));
-						obj.common.states = effectsStates;
-						adapter.setObject(NLdevice + ".effect", obj, function (err) {
-							if (err) adapter.log.debug("Error getting \"" + NLdevice + ".effect" + "\": " + err)
-						});
-					}
-				}
-			});
+			updateEventList(newStates.effects.effectsList);
 
 			setChangedState(NLdevice + ".info.name",			oldStates[adapter.namespace + "." + NLdevice + ".info.name"], 			newStates.name);
 			setChangedState(NLdevice + ".info.serialNo",		oldStates[adapter.namespace + "." + NLdevice + ".info.serialNo"],		newStates.serialNo);
@@ -621,40 +613,60 @@ function setChangedState(stateID, oldState, newStateValue) {
 	try {
 		// set state only when value changed or value is not acknowledged or state is null (never had a value)
 		if (oldState == null || oldState.val != newStateValue || !oldState.ack) {
-			adapter.log.debug("Update from OpenAPI: value for state \"" + stateID + "\" changed >>>> set new value: " + newStateValue);
+			adapter.log.debug("Update from OpenAPI: value for state '" + stateID + "' changed >>>> set new value: " + newStateValue);
 			adapter.setState(stateID, newStateValue, true);
 		}
 	}
 	catch (err) {
-		let mes = "State \"" + stateID + "\" does not exist and will be ignored!";
+		let mes = "State '" + stateID + "' does not exist and will be ignored!";
 		adapter.log.warn(mes);
 		adapter.log.debug(mes + " " + err);
 	}
 }
 
+// write changes eventlist state and states of effect state
+function updateEventList(effectsArray) {
+	let effectsList;
+	let effectsStates = {};
+
+	adapter.getState(NLdevice + ".effectsList", function (err, oldState) {
+		if (err) adapter.log.error("Error reading state '" + NLdevice + "." + stateName + "': " + err + ". State will not be updated!");
+		else {
+				// loop through effectsList and write it as semicolon separated string and new states object
+				for (let i = 0; i < effectsArray.length; i++) {
+					if (effectsList)
+						effectsList += ";" + effectsArray[i];
+					else
+						effectsList = effectsArray[i];
+					effectsStates[effectsArray[i]] = effectsArray[i];
+				}
+				setChangedState(NLdevice + ".effectsList", oldState.val, effectsList);
+				// updating states of effect if changed
+				adapter.getObject(NLdevice + ".effect", function (err, obj) {
+					if (err) adapter.log.debug("Error getting '" + effectObject + "': " + err + ". States will not be updated!");
+					else {
+						// only if list has changed
+						if (JSON.stringify(effectsStates) !== JSON.stringify(obj.common.states)) {
+							adapter.log.debug("Update from OpenAPI: possible states for state 'effect' changed >>>> set new states: " + JSON.stringify(effectsArray));
+							obj.common.states = effectsStates;
+							adapter.setObject(NLdevice + ".effect", obj, function (err) {
+								if (err) adapter.log.debug("Error getting '" + NLdevice + ".effect" + "': " + err)
+							});
+						}
+					}
+				});
+		}
+	});
+}
+
 // sends a SSDP mSearch to discover nanoleaf devices
 function SSDP_mSearch(callback) {
-	let msearch_st;
-
 	// clear device list
 	SSDP_devices = [];
 
-	switch (NLdevice) {
-		case nanoleafDevices.lightpanels.deviceName:
-			msearch_st = nanoleafDevices.lightpanels.SSDP_NT_ST;
-			break;
-		case nanoleafDevices.canvas.deviceName:
-			msearch_st = nanoleafDevices.canvas.SSDP_NT_ST;
-			break;
-		default:
-			adapter.log.warn("Unknown device type \"" + NLdevice + "\". No search will be performed. Please report this to the developer!");
-	}
-
-	if (msearch_st) {
-		SSDP.mSearch(msearch_st);
-		// start timer for collecting SSDP responses
-		SSDP_mSearchTimer = setTimeout(callback, ssdp_mSearchTimeout, SSDP_devices);
-	}
+	SSDPpeer.search({ST: msearch_st});
+	// start timer for collecting SSDP responses
+	SSDP_mSearchTimer = setTimeout(callback, ssdp_mSearchTimeout, SSDP_devices);
 }
 
 // Create nanoleaf device
@@ -679,7 +691,7 @@ function createNanoleafDevice(deviceInfo, callback) {
 		default:
 			NLdevice = nanoleafDevices.canvas.deviceName;
 			nameProp = nanoleafDevices.canvas.name;
-			adapter.log.warn("nanoleaf device  \"" + model + "\" unknown! Using Canvas device as fallback. Please report this to the developer!");
+			adapter.log.warn("nanoleaf device  '" + model + "' unknown! Using Canvas device as fallback. Please report this to the developer!");
 	}
 	deleteNanoleafDevices(model);	// delete all other nanoleaf device models if existing
 
@@ -687,13 +699,13 @@ function createNanoleafDevice(deviceInfo, callback) {
 	if (rhythmAvailable) CreateRhythmDevice(rhythmConnected);
 	else DeleteRhythmDevice();
 
-	adapter.log.debug("nanoleaf Device \"" + nameProp + "\" (" + model + ") detected!");
+	adapter.log.debug("nanoleaf Device '" + nameProp + "' (" + model + ") detected!");
 
 	// create the device if not exists
 	adapter.getObject(NLdevice, function (err, obj) {
 		if (err) throw err;
 		if (obj == null) {
-			adapter.log.info("New nanoleaf device \"" + nameProp + "\" ("  + model + ") detected!");
+			adapter.log.info("New nanoleaf device '" + nameProp + "' ("  + model + ") detected!");
 
 			// Create nanoleaf Device
 			adapter.createDevice(NLdevice,
@@ -1040,7 +1052,7 @@ function deleteNanoleafDevices(ignoreModel) {
 			if (err) throw err;
 			// delete it
 			if (obj != null) {
-				adapter.log.debug("Delete \"" + nanoleafDevices.canvas.deviceName + "\" device...");
+				adapter.log.debug("Delete '" + nanoleafDevices.canvas.deviceName + "' device...");
 				adapter.getStates(nanoleafDevices.canvas.deviceName + ".*", function (err, states) {
 					for (let id in states)
 						adapter.delObject(id);
@@ -1056,7 +1068,7 @@ function deleteNanoleafDevices(ignoreModel) {
 			if (err) throw err;
 			// delete it
 			if (obj != null) {
-				adapter.log.debug("Delete \"" + nanoleafDevices.lightpanels.deviceName + "\" device...");
+				adapter.log.debug("Delete '" + nanoleafDevices.lightpanels.deviceName + "' device...");
 				adapter.getStates(nanoleafDevices.lightpanels.deviceName + ".*", function (err, states) {
 					for (let id in states)
 						adapter.delObject(id);
@@ -1266,7 +1278,7 @@ function connect(isReconnect) {
 		.then(function(info) {
 			StopConnectTimer();
 			setConnectedState(true);	// set connection state to true
-			adapter.log.info(((isReconnect) ? "Reconnected" : "Connected") + " to \"" + auroraAPI.host + ":" + auroraAPI.port + "\"");
+			adapter.log.info(((isReconnect) ? "Reconnected" : "Connected") + " to '" + auroraAPI.host + ":" + auroraAPI.port + "'");
 
 			let deviceInfo = JSON.parse(info);
 
@@ -1274,7 +1286,7 @@ function connect(isReconnect) {
 			createNanoleafDevice(deviceInfo, startAdapterProcessing);
 		})
 		.catch(function(err) {
-			let message = "Connection to \"" + auroraAPI.host + ":" + auroraAPI.port + "\" failed with " + formatError(err) + ". ";
+			let message = "Connection to '" + auroraAPI.host + ":" + auroraAPI.port + "' failed with " + formatError(err) + ". ";
 			let messageDetail = "Please check hostname/IP, device and connection!";
 
 			// is HTTP error
@@ -1298,87 +1310,79 @@ function connect(isReconnect) {
 	});
 }
 
-function SSDP_notify(data) {
+function SSDP_notify(headers, address) {
+	var deviceMatch = false;
 
-	adapter.log.debug("ssdp:alive NOTIFY received: " + JSON.stringify(data));
+	adapter.log.debug("Notify " + headers.NTS + " received: " + JSON.stringify(headers));
 
 	// only if connected
 	if (isConnected) {
 		// check UUID if set
 		if (NL_UUID) {
-			if (NL_UUID == data.usn) {
-				adapter.log.debug(data.usn + " matched nanoleaf device UUID! Keep alive...");
-				resetKeepAliveTimer();	// if match, keep alive
+			if (NL_UUID == headers.USN) {
+				adapter.log.debug(headers.USN + " matched nanoleaf device UUID!");
+				deviceMatch = true;
 			}
 		}
 		// if not set check device and set UUID
 		else {
-			var dev = parseDeviceURL(data.location);
-			// check device
-			if (dev) {
-				// if adapter host is IP, directly check if match
-				if (net.isIPv4(adapter.config.host)) {
-					if (dev.host == adapter.config.host) {
-						NL_UUID = data.usn;
-						adapter.log.debug("nanoleaf " + NL_UUID + " from device '" + dev.host + "' set!");
-						resetKeepAliveTimer();
-					}
-				}
-				// resolve hostname and then match
-				else {
-					dns.lookup(adapter.config.host, function(err, address) {
-						if (err) adapter.log.error("Error while looking up DNS '" + adapter.config.host + "'. Error: " + err.code + " (" + err.message + ").");
-						else if (dev.host == address) {
-							NL_UUID = data.usn;
-							adapter.log.debug("nanoleaf " + NL_UUID + " from device '" + dev.host + "' set!");
-							resetKeepAliveTimer();
-						}
-					});
+			// if adapter host is IP, directly check if match
+			if (net.isIPv4(adapter.config.host)) {
+				if (address.address == adapter.config.host) {
+					NL_UUID = headers.USN;
+					adapter.log.debug("nanoleaf " + NL_UUID + " from device '" + address.address + "' set!");
+					deviceMatch = true;
 				}
 			}
+			// resolve hostname and then match
 			else {
-				adapter.log.debug("Invalid location '" + data.location + "' received from device.");
+				dns.lookup(adapter.config.host, function(err, address) {
+					if (err) adapter.log.error("Error while looking up DNS '" + adapter.config.host + "'. Error: " + err.code + " (" + err.message + ").");
+					else if (address.address == address) {
+						NL_UUID = headers.USN;
+						adapter.log.debug("nanoleaf " + NL_UUID + " from device '" + adapter.config.host + "' set!");
+						deviceMatch = true;
+					}
+				});
 			}
 		}
+		if (deviceMatch)
+			switch(headers.NTS) {
+				// handle notify alive
+				case SSDP.ALIVE:	adapter.log.debug("Keep alive...");
+									resetKeepAliveTimer();
+									break;
+				// handle notify byebye
+				case SSDP.BYEBYE:	reconnect("ssdp:byebye received from device");
+									break;
+			}
 	}
 }
 
-function SSDP_goodbye(data) {
-	// only if connected
-	if (isConnected) {
-		adapter.log.debug("ssdp:byebye NOTIFY received: " + JSON.stringify(data));
-		reconnect("ssdp:byebye from device received");
-	}
-}
-
-function SSDP_msearch_result(data) {
+function SSDP_msearch_result(headers, address) {
 	// only when timer for collecting devices is running
 	if (SSDP_mSearchTimer) {
-		switch(data.st) {
+		switch(headers.ST) {
 			case nanoleafDevices.lightpanels.SSDP_NT_ST:
 			case nanoleafDevices.canvas.SSDP_NT_ST:
-				adapter.log.debug("SSDP M-Search found device with USN: " + data.usn + " and OpenAPI location: " + data.location);
+				adapter.log.debug("SSDP M-Search found device with USN: " + headers.USN + " and OpenAPI location: " + headers.LOCATION);
 
 				// get host and port from location
-				let device = parseDeviceURL(data.location);
-				if (device) SSDP_devices.push(device);
+				let device = getDevice(address.address, address.port, headers["NL-DEVICENAME"] ? headers["NL-DEVICENAME"] : "Nanoleaf device");
+				SSDP_devices.push(device);
 				break;
 		}
 	}
 }
 
-
-
 // init SSDP for nanoleaf (event binding)
 function initSSDP() {
-	// handle SSDP Notify messages
-	SSDP.on("DeviceAvailable:" + nanoleafDevices.lightpanels.SSDP_NT_ST, SSDP_notify);
-	SSDP.on("DeviceAvailable:" + nanoleafDevices.canvas.SSDP_NT_ST, SSDP_notify);
-	// handle device becomes unavailable
-	SSDP.on("DeviceUnavailable:" + nanoleafDevices.lightpanels.SSDP_NT_ST, SSDP_goodbye);
-	SSDP.on("DeviceUnavailable:" + nanoleafDevices.canvas.SSDP_NT_ST, SSDP_goodbye);
+	// handle notify event
+	SSDPpeer.on("notify", SSDP_notify);
 	// handle MSEARCH responses
-	SSDP.on("DeviceFound", SSDP_msearch_result);
+	SSDPpeer.on("found", SSDP_msearch_result);
+
+	SSDPpeer.start();
 
 	adapter.log.debug("SSDP events initialized!");
 }
@@ -1407,7 +1411,7 @@ function init() {
 		});
 
 		// continue initialization with connecting
-		adapter.log.info("Connecting to \"" + auroraAPI.host + ":" + auroraAPI.port + "\"...");
+		adapter.log.info("Connecting to '" + auroraAPI.host + ":" + auroraAPI.port + "'...");
 		connect(false);
 	}
 	catch (err) {
