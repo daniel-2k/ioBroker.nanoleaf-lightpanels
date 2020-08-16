@@ -4,7 +4,7 @@
     "version": "1.0.3",
     "news": {
       "1.0.3": {
-        "en": "search nanoleaf devices does not work on clean install of adapter<br>added update of effectsList via SSE<br>display nanoleaf device name in admin search result list<br>using 'peer-ssdp' for SSDP processing",
+        "en": "search nanoleaf devices does not work on clean install of adapter<br>added update of effectsList via SSE<br>display nanoleaf device name in admin search result list<br>using forked 'node-upnp-ssdp' library to fix interface bindung",
         "de": "Suche nach nanoleaf Geräten funktioniert nicht bei einer Neuinstallation des Adapters<br>effectsList wird auch über SSE aktualisiert<br>Anzeige des naneleaf Gerätenamens in der List der Suchergebnisse<br>Nutzung von 'peer-ssdp' für SSDP-Verarbeitung"
       },
       "1.0.2": {
@@ -97,7 +97,7 @@
     "loglevel": "info",
     "messagebox": true,
     "type": "lighting",
-    "installedFrom": "iobroker.nanoleaf-lightpanels@1.0.0"
+    "installedFrom": "https://github.com/daniel-2k/ioBroker.nanoleaf-lightpanels/tarball/dev_1.0.3"
   },
   "native": {
     "port": 16021,

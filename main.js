@@ -7,8 +7,7 @@ let utils = require(__dirname + "/lib/utils"); // Get common adapter utils
 let adapter;
 
 // constants
-const SSDP = require("peer-ssdp");
-const SSDPpeer = SSDP.createPeer();
+const SSDP = require(__dirname + "/lib/node-upnp-ssdp");
 const dns = require("dns");
 const net = require("net");
 const AuroraApi = require(__dirname + "/lib/nanoleaf-aurora-api");
@@ -63,7 +62,7 @@ function startAdapter(options) {
 			adapter.log.info("Shutting down Nanoleaf adapter '" + adapter.namespace + "'...");
 			StopPollingTimer();
 			StopConnectTimer();
-			SSDPpeer.close();
+			SSDP.close();
 			auroraAPI.stopSSE();
 			callback();
 		}
@@ -355,25 +354,17 @@ function RGBHEXtoRGBDEC(RGBHEX) {
 		return null;
 }
 
-function getDevice(host, port, name) {
-	var device = {};
-
-	device.host = host;
-	device.port = port;
-	device.name = name;
-
-	return device;
-}
-
-function parseDeviceURL(URL) {
-	let pattern = new RegExp("http:\/\/([0-9a-zA-Z\.]+):([0-9]{1,5})", "gi");
-	let res = pattern.exec(URL);
+function getDevice(URL, name) {
 	let devInfo;
+	const pattern = new RegExp("http:\/\/([0-9a-zA-Z\.]+):([0-9]{1,5})", "gi");
+
+	let res = pattern.exec(URL);
 
 	if (res && res.length == 3) {
 		devInfo = {};
 		devInfo.host = res[1];
 		devInfo.port = res[2];
+		devInfo.name = name;
 	}
 	return devInfo;
 }
@@ -632,29 +623,29 @@ function updateEventList(effectsArray) {
 	adapter.getState(NLdevice + ".effectsList", function (err, oldState) {
 		if (err) adapter.log.error("Error reading state '" + NLdevice + "." + stateName + "': " + err + ". State will not be updated!");
 		else {
-				// loop through effectsList and write it as semicolon separated string and new states object
-				for (let i = 0; i < effectsArray.length; i++) {
-					if (effectsList)
-						effectsList += ";" + effectsArray[i];
-					else
-						effectsList = effectsArray[i];
-					effectsStates[effectsArray[i]] = effectsArray[i];
-				}
-				setChangedState(NLdevice + ".effectsList", oldState.val, effectsList);
-				// updating states of effect if changed
-				adapter.getObject(NLdevice + ".effect", function (err, obj) {
-					if (err) adapter.log.debug("Error getting '" + effectObject + "': " + err + ". States will not be updated!");
-					else {
-						// only if list has changed
-						if (JSON.stringify(effectsStates) !== JSON.stringify(obj.common.states)) {
-							adapter.log.debug("Update from OpenAPI: possible states for state 'effect' changed >>>> set new states: " + JSON.stringify(effectsArray));
-							obj.common.states = effectsStates;
-							adapter.setObject(NLdevice + ".effect", obj, function (err) {
-								if (err) adapter.log.debug("Error getting '" + NLdevice + ".effect" + "': " + err)
-							});
-						}
+			// loop through effectsList and write it as semicolon separated string and new states object
+			for (let i = 0; i < effectsArray.length; i++) {
+				if (effectsList)
+					effectsList += ";" + effectsArray[i];
+				else
+					effectsList = effectsArray[i];
+				effectsStates[effectsArray[i]] = effectsArray[i];
+			}
+			setChangedState(NLdevice + ".effectsList", oldState.val, effectsList);
+			// updating states of effect if changed
+			adapter.getObject(NLdevice + ".effect", function (err, obj) {
+				if (err) adapter.log.debug("Error getting '" + effectObject + "': " + err + ". States will not be updated!");
+				else {
+					// only if list has changed
+					if (JSON.stringify(effectsStates) !== JSON.stringify(obj.common.states)) {
+						adapter.log.debug("Update from OpenAPI: possible states for state 'effect' changed >>>> set new states: " + JSON.stringify(effectsArray));
+						obj.common.states = effectsStates;
+						adapter.setObject(NLdevice + ".effect", obj, function (err) {
+							if (err) adapter.log.debug("Error getting '" + NLdevice + ".effect" + "': " + err)
+						});
 					}
-				});
+				}
+			});
 		}
 	});
 }
@@ -664,7 +655,7 @@ function SSDP_mSearch(callback) {
 	// clear device list
 	SSDP_devices = [];
 
-	SSDPpeer.search({ST: msearch_st});
+	SSDP.mSearch(msearch_st);
 	// start timer for collecting SSDP responses
 	SSDP_mSearchTimer = setTimeout(callback, ssdp_mSearchTimeout, SSDP_devices);
 }
@@ -1310,66 +1301,74 @@ function connect(isReconnect) {
 	});
 }
 
-function SSDP_notify(headers, address) {
-	var deviceMatch = false;
+function SSDP_notify(data) {
 
-	adapter.log.debug("Notify " + headers.NTS + " received: " + JSON.stringify(headers));
+	adapter.log.debug("ssdp:alive NOTIFY received: " + JSON.stringify(data));
 
 	// only if connected
 	if (isConnected) {
 		// check UUID if set
 		if (NL_UUID) {
-			if (NL_UUID == headers.USN) {
-				adapter.log.debug(headers.USN + " matched nanoleaf device UUID!");
-				deviceMatch = true;
+			if (NL_UUID == data.usn) {
+				adapter.log.debug(data.usn + " matched nanoleaf device UUID! Keep alive...");
+				resetKeepAliveTimer();	// if match, keep alive
 			}
 		}
 		// if not set check device and set UUID
 		else {
-			// if adapter host is IP, directly check if match
-			if (net.isIPv4(adapter.config.host)) {
-				if (address.address == adapter.config.host) {
-					NL_UUID = headers.USN;
-					adapter.log.debug("nanoleaf " + NL_UUID + " from device '" + address.address + "' set!");
-					deviceMatch = true;
+			var dev = getDevice(data.location);
+			// check device
+			if (dev) {
+				// if adapter host is IP, directly check if match
+				if (net.isIPv4(adapter.config.host)) {
+					if (dev.host == adapter.config.host) {
+						NL_UUID = data.usn;
+						adapter.log.debug("nanoleaf " + NL_UUID + " from device '" + dev.host + "' set!");
+						resetKeepAliveTimer();
+					}
+				}
+				// resolve hostname and then match
+				else {
+					dns.lookup(adapter.config.host, function(err, address) {
+						if (err) adapter.log.error("Error while looking up DNS '" + adapter.config.host + "'. Error: " + err.code + " (" + err.message + ").");
+						else if (dev.host == address) {
+							NL_UUID = data.usn;
+							adapter.log.debug("nanoleaf " + NL_UUID + " from device '" + adapter.config.host + "' (" + dev.host + ") set!");
+							resetKeepAliveTimer();
+						}
+					});
 				}
 			}
-			// resolve hostname and then match
 			else {
-				dns.lookup(adapter.config.host, function(err, address) {
-					if (err) adapter.log.error("Error while looking up DNS '" + adapter.config.host + "'. Error: " + err.code + " (" + err.message + ").");
-					else if (address.address == address) {
-						NL_UUID = headers.USN;
-						adapter.log.debug("nanoleaf " + NL_UUID + " from device '" + adapter.config.host + "' set!");
-						deviceMatch = true;
-					}
-				});
+				adapter.log.debug("Invalid location '" + data.location + "' received from device.");
 			}
 		}
-		if (deviceMatch)
-			switch(headers.NTS) {
-				// handle notify alive
-				case SSDP.ALIVE:	adapter.log.debug("Keep alive...");
-									resetKeepAliveTimer();
-									break;
-				// handle notify byebye
-				case SSDP.BYEBYE:	reconnect("ssdp:byebye received from device");
-									break;
-			}
 	}
 }
 
-function SSDP_msearch_result(headers, address) {
+function SSDP_goodbye(data) {
+	// only if connected
+	if (isConnected) {
+		adapter.log.debug("ssdp:byebye NOTIFY received: " + JSON.stringify(data));
+		reconnect("ssdp:byebye from device received");
+	}
+}
+
+function SSDP_msearch_result(data) {
 	// only when timer for collecting devices is running
 	if (SSDP_mSearchTimer) {
-		switch(headers.ST) {
+		switch(data.st) {
 			case nanoleafDevices.lightpanels.SSDP_NT_ST:
 			case nanoleafDevices.canvas.SSDP_NT_ST:
-				adapter.log.debug("SSDP M-Search found device with USN: " + headers.USN + " and OpenAPI location: " + headers.LOCATION);
+				let devInfo;
 
-				// get host and port from location
-				let device = getDevice(address.address, address.port, headers["NL-DEVICENAME"] ? headers["NL-DEVICENAME"] : "Nanoleaf device");
-				SSDP_devices.push(device);
+				adapter.log.debug("SSDP M-Search found device with USN: " + data.usn + " and OpenAPI location: " + data.location);
+
+				// get device info
+				devInfo = getDevice(data.location, data["nl-devicename"] ? data["nl-devicename"] : "Nanoleaf device");
+
+				if (devInfo) SSDP_devices.push(devInfo);
+
 				break;
 		}
 	}
@@ -1377,12 +1376,14 @@ function SSDP_msearch_result(headers, address) {
 
 // init SSDP for nanoleaf (event binding)
 function initSSDP() {
-	// handle notify event
-	SSDPpeer.on("notify", SSDP_notify);
+	// handle SSDP Notify messages
+	SSDP.on("DeviceAvailable:" + nanoleafDevices.lightpanels.SSDP_NT_ST, SSDP_notify);
+	SSDP.on("DeviceAvailable:" + nanoleafDevices.canvas.SSDP_NT_ST, SSDP_notify);
+	// handle device becomes unavailable
+	SSDP.on("DeviceUnavailable:" + nanoleafDevices.lightpanels.SSDP_NT_ST, SSDP_goodbye);
+	SSDP.on("DeviceUnavailable:" + nanoleafDevices.canvas.SSDP_NT_ST, SSDP_goodbye);
 	// handle MSEARCH responses
-	SSDPpeer.on("found", SSDP_msearch_result);
-
-	SSDPpeer.start();
+	SSDP.on("DeviceFound", SSDP_msearch_result);
 
 	adapter.log.debug("SSDP events initialized!");
 }

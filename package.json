@@ -28,7 +28,8 @@
     "url": "https://github.com/daniel-2k/ioBroker.nanoleaf-lightpanels"
   },
   "dependencies": {
-    "peer-ssdp": "^0.0.5",
+    "ip": "^1.0.1",
+    "underscore": ">= 1.6.0"
     "eventsource": "^1.0.7"
   },
   "devDependencies": {
