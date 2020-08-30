@@ -1,6 +1,6 @@
 {
   "name": "iobroker.nanoleaf-lightpanels",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "ioBroker Adapter to control the nanoleaf Light Panels/Canvas (formerly nanoleaf Aurora)",
   "author": {
     "name": "daniel_2k",
@@ -27,9 +27,9 @@
     "type": "git",
     "url": "https://github.com/daniel-2k/ioBroker.nanoleaf-lightpanels"
   },
-  "dependencies": {
-    "node-upnp-ssdp": "^0.1.1",
-    "eventsource": "^1.0.7"
+ "dependencies": {
+    "eventsource": "^1.0.7",
+    "underscore": ">= 1.6.0"
   },
   "devDependencies": {
     "chai": "^4.1.2",

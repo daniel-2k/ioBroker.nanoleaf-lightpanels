@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "nanoleaf-lightpanels",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "news": {
+      "1.0.3": {
+        "en": "search nanoleaf devices does not work on clean install of adapter<br>added update of effectsList via SSE<br>display nanoleaf device name in admin search result list<br>ability to disable usage of SSE<br>using forked 'node-upnp-ssdp' library to fix interface bindung",
+        "de": "Suche nach nanoleaf Geräten funktioniert nicht bei einer Neuinstallation des Adapters<br>effectsList wird auch über SSE aktualisiert<br>Anzeige des naneleaf Gerätenamens in der List der Suchergebnisse<br>Nutzung von SSE abschaltbar<br>Nutzung von 'peer-ssdp' für SSDP-Verarbeitung"
+      },
       "1.0.2": {
         "en": "fixed detection of ssdp:alive notify message for Canvas (fixes disconnect/connect issue)<br>fixed sending correct service type for discovery of Canvas devices (fixes no devices found for Canvas devices)<br>if unknown nanoleaf device is detected, Canvas will be used as fallback and warning will be logged<br>setting rhythmMode was not working",
         "de": "Erkennung der ssdp:alive notify Nachrichten von Canvas gefixt (behebt Problem ständiger disconnects/connects)<br>Senden des korrekten Service Types für die Erkennung von Canvas-Geräten (behebt das keine Canvas-Geräte gefunden werden können)<br>unbekannte nanoleaf-Geräte werden als Canvas-Geräte behandelt und Warnung ausgegeben<br>Setzen des rhythmMode funktionierte nicht"
@@ -93,12 +97,12 @@
     "loglevel": "info",
     "messagebox": true,
     "type": "lighting",
-    "installedFrom": "iobroker.nanoleaf-lightpanels@1.0.0"
   },
   "native": {
     "port": 16021,
     "pollingInterval": 5000,
-    "reconnectInterval": 60
+    "reconnectInterval": 60,
+    "disableSSE": false
   },
   "objects": [],
   "instanceObjects": [

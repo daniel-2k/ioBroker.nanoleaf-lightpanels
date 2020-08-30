@@ -30,4 +30,5 @@ systemDictionary = {
     "ErrorConnection": {                             "en": "Error while connecting. For more details see log!", "de": "Fehler beim Verbindungsaufbau. Weitere Details siehe Log!"},
     "NoAuthTokenFound": {                            "en": "No authentification token found. For more details see log!", "de": "Kein Authentifizierungs-Token gefunden. Weitere Details siehe Log!"},
     "SuccessGetAuthToken": {                         "en": "Authentification token usccessfully obtained!",   "de": "Authentifizierungs-Token anfordern erfolgreich!"},
+    "disableSSE": {                                  "en": "Disable Server Sent Events (SSE)",                "de": "Server Sent Events (SSE) deaktivieren"},
 };

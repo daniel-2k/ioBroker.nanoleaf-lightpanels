@@ -26,5 +26,6 @@
 	"ErrorUnauthorized": "Zugriff verweigert/nicht autorisiert. Ist das Gerät im Pairing-Modus?<br>Um das Gerät in den Pairing-Modus zu versetzen, muss die Power-Taste am Gerät 5-7 Sekunden gedrückt gehalten werden, bis die LEDs am Gerät abwechselnd leuchten.",
 	"ErrorConnection": "Fehler beim Verbindungsaufbau. Weitere Details siehe Log!",
 	"NoAuthTokenFound": "Kein Authentifizierungs-Token gefunden. Weitere Details siehe Log!",
-	"SuccessGetAuthToken": "Authentifizierungs-Token anfordern erfolgreich!"
+	"SuccessGetAuthToken": "Authentifizierungs-Token anfordern erfolgreich!",
+	"disableSSE": "Server Sent Events (SSE) deaktivieren"
 }

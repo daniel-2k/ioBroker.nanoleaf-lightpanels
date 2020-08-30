@@ -42,7 +42,7 @@
 		if (!settings) return;
 
 		// handle value changes
-		$(".value").on("input", function() {
+		$(".value").on("input change", function() {
 			// fill port if host changes and if matching in datalist
 			if (this.id == "host")
 				$("#hostlist option").each(function() {
@@ -68,6 +68,7 @@
 		$("#authtoken").val(settings["authtoken"]);
 		$("#pollingInterval").val(settings["pollingInterval"]);
 		$("#reconnectInterval").val(settings["reconnectInterval"]);
+		$("#disableSSE").prop("checked", settings["disableSSE"]);
 
 		setStates();
 		onChange(false);
@@ -89,7 +90,7 @@
 
 							// add found devices
 							for(var i = 0; i < devices.length; i++) {
-								var option = $("<option>", {value: devices[i].host, "data-port": devices[i].port});
+								var option = $("<option>", {value: devices[i].host, "data-port": devices[i].port, text: devices[i].name});
 								$("#hostlist").append(option);
 							}
 
@@ -150,6 +151,7 @@
 		obj["authtoken"] = $("#authtoken").val();
 		obj["pollingInterval"] = $("#pollingInterval").val();
 		obj["reconnectInterval"] = $("#reconnectInterval").val();
+		obj["disableSSE"] = $("#disableSSE").is(":checked");
 
 		callback(obj);
 	}
@@ -210,6 +212,10 @@
 						<input type="number" class="value" id="reconnectInterval" min="10" max="21600"/>
 						<label for="reconnectInterval" class="translate">ReconnectInterval</label>
 						<span class="translate">ReconnectIntervalDesc</span>
+					</div>
+					<div class="input-field col s12 m12 l12">
+						<input type="checkbox" class="value" id="disableSSE"/>
+						<label for="disableSSE" class="translate">disableSSE</label>
 					</div>
 				</div>
 			</div>

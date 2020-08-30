@@ -26,5 +26,6 @@
 	"ErrorUnauthorized": "Access denied/unauthorized. Is the device in pairing mode?<br>To set the device into pairing mode press and hold the power button at the device for 5-7 seconds until the LEDs at the device flash alternately.",
 	"ErrorConnection": "Error while connecting. For more details see log!",
 	"NoAuthTokenFound": "No authentification token found. For more details see log!",
-	"SuccessGetAuthToken": "Authentification token usccessfully obtained!"
+	"SuccessGetAuthToken": "Authentification token usccessfully obtained!",
+	"disableSSE": "Disable Server Sent Events (SSE)"
 }
