@@ -96,7 +96,7 @@
     "readme": "https://github.com/daniel-2k/ioBroker.nanoleaf-lightpanels/blob/master/README.md",
     "loglevel": "info",
     "messagebox": true,
-    "type": "lighting",
+    "type": "lighting"
   },
   "native": {
     "port": 16021,
