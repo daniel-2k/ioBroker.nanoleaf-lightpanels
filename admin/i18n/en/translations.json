@@ -14,7 +14,7 @@
 	"AuthTokenDesc": "Authentification token for nanoleaf Light Panels OpenAPI.<br>Enter if you have already a token.<br>Otherweise this can be obtained by clicking on the \"Obtain authorization token\" button. The device has to be in paring mode (press and hold power button for 5-7 seconds).",
 	"GetAuthToken": "Obtain authorization token",
 	"PollingInterval": "Polling interval",
-	"PollingIntervalDesc": "Interval in ms for status update polling (only until firmware version 3.1.0)",
+	"PollingIntervalDesc": "Interval in ms for status update polling (only until LightPanels firmware version 3.1.0 and Canvas 1.1.0)",
 	"ReconnectInterval": "Reconnect interval",
 	"ReconnectIntervalDesc": "Interval in seconds for reconnection attempts",
 	"OnSaveRestartHint": "On save adapter restarts with new config immediately",
@@ -27,5 +27,7 @@
 	"ErrorConnection": "Error while connecting. For more details see log!",
 	"NoAuthTokenFound": "No authentification token found. For more details see log!",
 	"SuccessGetAuthToken": "Authentification token usccessfully obtained!",
-	"disableSSE": "Disable Server Sent Events (SSE)"
+	"disableSSE": "Disable Server Sent Events (SSE)",
+	"adapterAddress": "adapterAddress",
+	"Listen on all IPs": "Listen on all IPs"
 }

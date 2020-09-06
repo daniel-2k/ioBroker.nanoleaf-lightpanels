@@ -14,7 +14,7 @@
 	"AuthTokenDesc": "Authentifizierungs-Token der nanoleaf Light Panels OpenAPI.<br>Wenn vorhanden, kann dieser hier eingegeben werden. Ansonsten kann dieser über den Button \"Authentifizierungs-Token anfordern\" angefordert werden. Das Gerät muss sich dazu im Pairing-Modus befinden (Power-Taste 5-7 Sekunden gedrückt halten).",
 	"GetAuthToken": "Authentifizierungs-Token anfordern",
 	"PollingInterval": "Abfrage-Intervall",
-	"PollingIntervalDesc": "Intervall in ms für regelmäßige Statusabfrage (nur bis Firmware Version 3.1.0)",
+	"PollingIntervalDesc": "Intervall in ms für regelmäßige Statusabfrage (nur bis LightPanels Firmware Version 3.1.0 und Canvas 1.1.0)",
 	"ReconnectInterval": "Wiederverbindungs-Intervall",
 	"ReconnectIntervalDesc": "Intervall in Sekunden für erneute Versuche die Verbindung herzustellen",
 	"OnSaveRestartHint": "Beim Speichern wird der Adapter sofort neugestartet.",
@@ -27,5 +27,7 @@
 	"ErrorConnection": "Fehler beim Verbindungsaufbau. Weitere Details siehe Log!",
 	"NoAuthTokenFound": "Kein Authentifizierungs-Token gefunden. Weitere Details siehe Log!",
 	"SuccessGetAuthToken": "Authentifizierungs-Token anfordern erfolgreich!",
-	"disableSSE": "Server Sent Events (SSE) deaktivieren"
+	"disableSSE": "Server Sent Events (SSE) deaktivieren",
+	"adapterAddress": "Adapter-Adresse",
+	"Listen on all IPs": "Auf alle IPs hören"
 }

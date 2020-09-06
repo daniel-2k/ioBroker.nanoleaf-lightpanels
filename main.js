@@ -7,7 +7,7 @@ let utils = require(__dirname + "/lib/utils"); // Get common adapter utils
 let adapter;
 
 // constants
-const SSDP = require(__dirname + "/lib/node-upnp-ssdp");
+const SSDPUPNP = require(__dirname + "/lib/node-upnp-ssdp");
 const dns = require("dns");
 const net = require("net");
 const AuroraApi = require(__dirname + "/lib/nanoleaf-aurora-api");
@@ -20,8 +20,8 @@ const ssdp_mSearchTimeout = 5000;				// time to wait for getting SSDP answers fo
 const msearch_st = "ssdp:all";					// Service type for MESEARCH -> all to develop all kind of nanoleaf devices
 
 // nanoleaf device definitions
-const nanoleafDevices = { lightpanels:	{ model: "NL22", deviceName: "LightPanels", name: "Light Panels", SSDP_NT_ST: "nanoleaf_aurora:light" },
-						  canvas:		{ model: "NL29", deviceName: "Canvas", name: "Canvas", SSDP_NT_ST: "nanoleaf:nl29" } };
+const nanoleafDevices = { lightpanels:	{ model: "NL22", deviceName: "LightPanels", name: "Light Panels", SSDP_NT_ST: "nanoleaf_aurora:light", SSEFirmware: "3.1.0" },
+						  canvas:		{ model: "NL29", deviceName: "Canvas", name: "Canvas", SSDP_NT_ST: "nanoleaf:nl29", SSEFirmware: "1.1.0" } };
 
 // variables
 let auroraAPI;							// Instance of auroraAPI-Client
@@ -33,6 +33,7 @@ let NLdevice;							// holds the nanoleaf device type which will be processed
 let NL_UUID;							// UUID of NL device received via SSDP
 let SSDP_devices = [];					// list of devices found via SSDP MSEARCH
 let SSEenabled;							// indicates if SSE is enabled
+var SSDP;								// SSDP object
 
 // Timers
 let pollingTimer;
@@ -682,12 +683,10 @@ function createNanoleafDevice(deviceInfo, callback) {
 			adapter.log.warn("nanoleaf device  '" + model + "' unknown! Using Canvas device as fallback. Please report this to the developer!");
 	}
 
-	// enable SSE instead of polling for firmware lightpanels version > 3.1.0 or canvas firmware version > 1.1.0 and disable SSE when selected in admin
-	if ( ((deviceInfo.model == nanoleafDevices.lightpanels.model && deviceInfo.firmwareVersion > "3.1.0")  ||
-		 (deviceInfo.model == nanoleafDevices.canvas.model && deviceInfo.firmwareVersion > "1.1.0")) &&
-	     !adapter.config.disableSSE) {
+	// enable SSE instead of polling for firmwares higher then in specification given and disable SSE when selected in admin
+	if (deviceInfo.firmwareVersion > NLdevice.SSEFirmware && !adapter.config.disableSSE)
 		SSEenabled = true;
-	} else SSEenabled = false;
+	else SSEenabled = false;
 
 	deleteNanoleafDevices(model);	// delete all other nanoleaf device models if existing
 
@@ -1397,6 +1396,7 @@ function SSDP_msearch_result(data) {
 
 // init SSDP for nanoleaf (event binding)
 function initSSDP() {
+	SSDP =  SSDPUPNP.start(adapter.config.adapterAddress);
 	// handle MSEARCH responses
 	SSDP.on("DeviceFound", SSDP_msearch_result);
 

@@ -15,6 +15,9 @@
 	.success {
 		color: #20af18;
 	}
+	.m .page {
+		margin-top: 1.5em;
+	}
 </style>
 
 <script type="text/javascript" src="../../lib/js/jquery-3.2.1.min.js"></script>
@@ -69,6 +72,10 @@
 		$("#pollingInterval").val(settings["pollingInterval"]);
 		$("#reconnectInterval").val(settings["reconnectInterval"]);
 		$("#disableSSE").prop("checked", settings["disableSSE"]);
+		// Adapter address
+		fillSelectIPs('#adapterAddress', settings.adapterAddress, false, true, function () {
+                $('#adapterAddress').select();
+		});
 
 		setStates();
 		onChange(false);
@@ -152,6 +159,7 @@
 		obj["pollingInterval"] = $("#pollingInterval").val();
 		obj["reconnectInterval"] = $("#reconnectInterval").val();
 		obj["disableSSE"] = $("#disableSSE").is(":checked");
+		obj["adapterAddress"] = $("#adapterAddress").val();
 
 		callback(obj);
 	}
@@ -203,6 +211,14 @@
 			</div>
 			<div id="tab-advanced" class="col s12 page">
 				<div class="row">
+					<div class="input-field col s12 m8">
+						<select id="adapterAddress" class="value"></select>
+						<label for="adapterAddress" class="translate">adapterAddress</label>
+					</div>
+					<div class="input-field col s12 m12 l12">
+						<input type="checkbox" class="value" id="disableSSE"/>
+						<label for="disableSSE" class="translate">disableSSE</label>
+					</div>
 					<div class="input-field col s12 m12 l12">
 						<input type="number" class="value" id="pollingInterval" min="500" max="600000"/>
 						<label for="pollingInterval" class="translate">PollingInterval</label>
@@ -212,10 +228,6 @@
 						<input type="number" class="value" id="reconnectInterval" min="10" max="21600"/>
 						<label for="reconnectInterval" class="translate">ReconnectInterval</label>
 						<span class="translate">ReconnectIntervalDesc</span>
-					</div>
-					<div class="input-field col s12 m12 l12">
-						<input type="checkbox" class="value" id="disableSSE"/>
-						<label for="disableSSE" class="translate">disableSSE</label>
 					</div>
 				</div>
 			</div>

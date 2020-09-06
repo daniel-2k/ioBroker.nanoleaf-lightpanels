@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "nanoleaf-lightpanels",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "news": {
+      "1.0.4": {
+        "en": "adapter address can be choosen in adapter settings for interfacing binding issues<br>use fixed port 5000 for MSEARCH replies for easy setup in firewall",
+        "de": "Adapter-Adresse kann in den Adapter-Einstellungen festgelegt werden (bei Problemen mit Interface Binding)<br>statischer Port 5000 für MESEACH Antworten für einfaches Setup in der Firewall (iptables)"
+      },
       "1.0.3": {
         "en": "search nanoleaf devices does not work on clean install of adapter<br>added update of effectsList via SSE<br>display nanoleaf device name in admin search result list<br>ability to disable usage of SSE<br>using forked 'node-upnp-ssdp' library to fix interface bindung",
         "de": "Suche nach nanoleaf Geräten funktioniert nicht bei einer Neuinstallation des Adapters<br>effectsList wird auch über SSE aktualisiert<br>Anzeige des naneleaf Gerätenamens in der List der Suchergebnisse<br>Nutzung von SSE abschaltbar<br>Nutzung von 'peer-ssdp' für SSDP-Verarbeitung"
@@ -102,7 +106,8 @@
     "port": 16021,
     "pollingInterval": 5000,
     "reconnectInterval": 60,
-    "disableSSE": false
+    "disableSSE": false,
+    "adapterAddress": "0.0.0.0"
   },
   "objects": [],
   "instanceObjects": [

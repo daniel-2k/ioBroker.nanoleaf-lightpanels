@@ -48,6 +48,10 @@ You can use the nanoleaf vis demo project found in the /vis subfolder on github.
 
 ## Changelog
 
+### 1.0.4 (2020-09-06)
+* (daniel_2k) new: adapter address can be choosen in adapter settings for interfacing binding issues
+* (daniel_2k) changed: use fixed port 5000 for MSEARCH replies for easy setup in firewall
+
 ### 1.0.3 (2020-08-30)
 * (daniel_2k) fixed: search nanoleaf devices does not work on clean install of adapter
 * (daniel_2k) new: added update of effectsList via SSE

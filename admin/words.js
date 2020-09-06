@@ -17,7 +17,7 @@ systemDictionary = {
     "AuthTokenDesc": {                               "en": "Authentification token for nanoleaf Light Panels OpenAPI.<br>Enter if you have already a token.<br>Otherweise this can be obtained by clicking on the \"Obtain authorization token\" button. The device has to be in paring mode (press and hold power button for 5-7 seconds).", "de": "Authentifizierungs-Token der nanoleaf Light Panels OpenAPI.<br>Wenn vorhanden, kann dieser hier eingegeben werden. Ansonsten kann dieser über den Button \"Authentifizierungs-Token anfordern\" angefordert werden. Das Gerät muss sich dazu im Pairing-Modus befinden (Power-Taste 5-7 Sekunden gedrückt halten)."},
     "GetAuthToken": {                                "en": "Obtain authorization token",                      "de": "Authentifizierungs-Token anfordern"},
     "PollingInterval": {                             "en": "Polling interval",                                "de": "Abfrage-Intervall"},
-    "PollingIntervalDesc": {                         "en": "Interval in ms for status update polling (only until firmware version 3.1.0)", "de": "Intervall in ms für regelmäßige Statusabfrage (nur bis Firmware Version 3.1.0)"},
+    "PollingIntervalDesc": {                         "en": "Interval in ms for status update polling (only until LightPanels firmware version 3.1.0 and Canvas 1.1.0)", "de": "Intervall in ms für regelmäßige Statusabfrage (nur bis LightPanels Firmware Version 3.1.0 und Canvas 1.1.0)"},
     "ReconnectInterval": {                           "en": "Reconnect interval",                              "de": "Wiederverbindungs-Intervall"},
     "ReconnectIntervalDesc": {                       "en": "Interval in seconds for reconnection attempts",   "de": "Intervall in Sekunden für erneute Versuche die Verbindung herzustellen"},
     "OnSaveRestartHint": {                           "en": "On save adapter restarts with new config immediately", "de": "Beim Speichern wird der Adapter sofort neugestartet."},
@@ -31,4 +31,6 @@ systemDictionary = {
     "NoAuthTokenFound": {                            "en": "No authentification token found. For more details see log!", "de": "Kein Authentifizierungs-Token gefunden. Weitere Details siehe Log!"},
     "SuccessGetAuthToken": {                         "en": "Authentification token usccessfully obtained!",   "de": "Authentifizierungs-Token anfordern erfolgreich!"},
     "disableSSE": {                                  "en": "Disable Server Sent Events (SSE)",                "de": "Server Sent Events (SSE) deaktivieren"},
+    "adapterAddress": {                              "en": "adapterAddress",                                  "de": "Adapter-Adresse"},
+    "Listen on all IPs": {                           "en": "Listen on all IPs",                               "de": "Auf alle IPs hören"},
 };
