@@ -21,8 +21,12 @@ This is an ioBroker Adapter to control the nanoleaf Light Panels (formerly nanol
 4. Save the settings.
 5. Have fun!
 
+### Direct Status update via Server Sent Events (SSE)
 Since Light Panels firmware version > 3.1.0 and Canvas firmware version > 1.1.0 Server Sent Events (SSE) can be used for direct status updates. For Canvas devices touch events are supported.
-Please note: to detect if nanoleaf device is still alive, SSDP Notify messages were sent from nanoleaf device every 60 seconds. Please ensure you can receive UDP multicast messages on port 1900 (check firewall and routing). Otherwise you will get error messages in the adapter that connection is lost.
+
+_Please note:_ to detect if nanoleaf device is still alive, SSDP Notify messages were sent from nanoleaf device every 60 seconds. Please ensure you can receive UDP multicast messages on port 1900 (check firewall and routing). Otherwise you will get error messages in the adapter that connection was lost. If you have problems with keep alive, please set the correct adapter interface in admin settings for the nanoleaf adapter.
+For searching devices please ensure you can receive traffic on UDP port 5000.
+
 The setting for the status update polling interval only affects devices with lower firmware versions where polling is used for status updates.
 
 ## Alexa
