@@ -52,6 +52,9 @@ You can use the nanoleaf vis demo project found in the /vis subfolder on github.
 
 ## Changelog
 
+### 1.0.5 (2020-09-13)
+* (daniel_2k) fixed: touch channel was not created for nanoleaf devices (bug since 1.0.3)
+
 ### 1.0.4 (2020-09-06)
 * (daniel_2k) new: adapter address can be choosen in adapter settings for interfacing binding issues
 * (daniel_2k) changed: use fixed port 5000 for MSEARCH replies for easy setup in firewall

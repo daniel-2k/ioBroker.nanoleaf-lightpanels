@@ -958,7 +958,7 @@ function createNanoleafDevice(deviceInfo, callback) {
 			}
 		);
 		// touch event only for Canvas
-		if (NLdevice.deviceName == nanoleafDevices.canvas) {
+		if (NLdevice == nanoleafDevices.canvas) {
 			// create "touch" Channel
 			adapter.setObjectNotExists (NLdevice.deviceName + ".touch",
 				{
