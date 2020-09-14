@@ -404,7 +404,10 @@ function resetKeepAliveTimer() {
 function startSSE() {
 	auroraAPI.startSSE(function (data, error) {
 			if (error) adapter.log.error(error);
-			else statusUpdate(data);
+			else {
+				adapter.log.debug("SSE data '" + JSON.stringify(data) + "' received!");
+				statusUpdate(data);
+			}
 		})
 		.then(function () {
 			adapter.log.debug("SSE subscription started, listening...");
@@ -510,8 +513,8 @@ function statusUpdate(data) {
 													default: 									adapter.log.warn("Attribute '" + event.attribute + "' for event ID '" + data.eventID + "' is not implemented. Please report that to the developer!");
 												}
 												break;
-				case AuroraApi.Events.touch:	writeState("touch.gesture", event.gesture);
-												writeState("touch.panelID", event.panelId);
+				case AuroraApi.Events.touch:	writeState("touch.gesture", event.gesture, true);
+												writeState("touch.panelID", event.panelId, true);
 												break;
 				default: adapter.log.warn("Invalid eventID '" + data.eventID + "' received from device. Please report that to the developer!");
 			}
@@ -533,11 +536,11 @@ function statusUpdate(data) {
 }
 
 // write single State
-function writeState(stateName, newState) {
+function writeState(stateName, newState, forceUpdate) {
 	// read  old state
 	adapter.getState(NLdevice.deviceName + "." + stateName, function (err, oldState) {
 		if (err) adapter.log.error("Error reading state '" + NLdevice.deviceName + "." + stateName + "': " + err + ". State will not be updated!");
-		else setChangedState(NLdevice.deviceName + "." + stateName, oldState, newState);
+		else setChangedState(NLdevice.deviceName + "." + stateName, oldState, newState, forceUpdate);
 	});
 }
 
@@ -601,12 +604,14 @@ function writeStates(newStates) {
 }
 
 // set changed state value
-function setChangedState(stateID, oldState, newStateValue) {
+function setChangedState(stateID, oldState, newStateValue, forceUpdate = false) {
 	// check oldStates
 	try {
 		// set state only when value changed or value is not acknowledged or state is null (never had a value)
-		if (oldState == null || oldState.val != newStateValue || !oldState.ack) {
-			adapter.log.debug("Update from OpenAPI: value for state '" + stateID + "' changed >>>> set new value: " + newStateValue);
+		if (oldState == null || (oldState.val != newStateValue || forceUpdate) || !oldState.ack) {
+			if (forceUpdate)
+				adapter.log.debug("Update from OpenAPI: value for state '" + stateID + "' updated >>>> force update value: " + newStateValue);
+			else adapter.log.debug("Update from OpenAPI: value for state '" + stateID + "' changed >>>> set new value: " + newStateValue);
 			adapter.setState(stateID, newStateValue, true);
 		}
 	}

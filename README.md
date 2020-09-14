@@ -52,6 +52,10 @@ You can use the nanoleaf vis demo project found in the /vis subfolder on github.
 
 ## Changelog
 
+### 1.0.6 (2020-09-14)
+* (daniel_2k) changed: force status update for Canvas touch events
+* (daniel_2k) new: added debug logging of received data via SSE
+
 ### 1.0.5 (2020-09-13)
 * (daniel_2k) fixed: touch channel was not created for nanoleaf devices (bug since 1.0.3)
 

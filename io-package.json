@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "nanoleaf-lightpanels",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "news": {
+      "1.0.6": {
+        "en": "force status update for Canvas touch events<br>added debug logging of received data via SSE",
+        "de": "Update von Canvas Touch-Ereignissen erzwingen<br>Debug-Logging von Daten die über SSE empfangen werden"
+      },
       "1.0.5": {
         "en": "touch channel was not created for nanoleaf devices (bug since 1.0.3)",
         "de": "Touch Channel wird bei Canvas-Geräten nicht angelegt (bug seit 1.0.3.)"
