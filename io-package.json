@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "nanoleaf-lightpanels",
-    "version": "1.0.6",
+    "version": "1.1.0",
     "news": {
+      "1.1.0": {
+        "en": "Shapes are supported",
+        "de": "Shapes werden untersützt"
+      },
       "1.0.6": {
         "en": "force status update for Canvas touch events<br>added debug logging of received data via SSE",
         "de": "Update von Canvas Touch-Ereignissen erzwingen<br>Debug-Logging von Daten die über SSE empfangen werden"
@@ -82,8 +86,8 @@
     },
     "title": "nanoleaf Light Panels/Canvas",
     "desc": {
-      "en": "Controlling the nanoleaf Light Panels/Canvas (fomerly nanoleaf Aurora) in ioBroker",
-      "de": "Steuerung der nanoleaf Light Panels/Canvas (fomerly nanoleaf Aurora) in ioBroker"
+      "en": "Controlling the nanoleaf Light Panels/Canvas/Shapes (fomerly nanoleaf Aurora) in ioBroker",
+      "de": "Steuerung der nanoleaf Light Panels/Canvas/Shapes (fomerly nanoleaf Aurora) in ioBroker"
     },
     "authors": [
       "daniel_2k <daniel_2k@outlook.com>"
@@ -100,6 +104,7 @@
       "nanoleaf",
       "light panels",
       "canvas",
+      "shapes",
       "aurora",
       "light",
       "led",

@@ -21,7 +21,8 @@ const msearch_st = "ssdp:all";					// Service type for MESEARCH -> all to develo
 
 // nanoleaf device definitions
 const nanoleafDevices = { lightpanels:	{ model: "NL22", deviceName: "LightPanels", name: "Light Panels", SSDP_NT_ST: "nanoleaf_aurora:light", SSEFirmware: "3.1.0" },
-						  canvas:		{ model: "NL29", deviceName: "Canvas", name: "Canvas", SSDP_NT_ST: "nanoleaf:nl29", SSEFirmware: "1.1.0" } };
+						  canvas:		{ model: "NL29", deviceName: "Canvas", name: "Canvas", SSDP_NT_ST: "nanoleaf:nl29", SSEFirmware: "1.1.0" },
+						  Shapes:		{ model: "NL42", deviceName: "Shapes", name: "Shapes", SSDP_NT_ST: "nanoleaf:nl42", SSEFirmware: "1.0.0" }  };
 
 // variables
 let auroraAPI;							// Instance of auroraAPI-Client
@@ -682,6 +683,10 @@ function createNanoleafDevice(deviceInfo, callback) {
 		case nanoleafDevices.canvas.model:
 			NLdevice = nanoleafDevices.canvas;
 			break;
+		// Shapes
+		case nanoleafDevices.shapes.model:
+			NLdevice = nanoleafDevices.shapes;
+			break;
 		// Canvas are fallback
 		default:
 			NLdevice = nanoleafDevices.canvas;
@@ -962,8 +967,8 @@ function createNanoleafDevice(deviceInfo, callback) {
 				"native": {}
 			}
 		);
-		// touch event only for Canvas
-		if (NLdevice == nanoleafDevices.canvas) {
+		// touch event only for Canvas and Shapes
+		if (NLdevice == nanoleafDevices.canvas || NLdevice == nanoleafDevices.shapes) {
 			// create "touch" Channel
 			adapter.setObjectNotExists (NLdevice.deviceName + ".touch",
 				{
@@ -1045,6 +1050,22 @@ function createNanoleafDevice(deviceInfo, callback) {
 // delete all nanoleaf devices
 //		Parameter 'ignoreModel': ignore deletion of this device model
 function deleteNanoleafDevices(ignoreModel) {
+	// delete shapes device if not ignored
+	if (ignoreModel !== nanoleafDevices.shapes.model) {
+		// check if device is still existing
+		adapter.getObject(nanoleafDevices.shapes.deviceName, function (err, obj) {
+			if (err) throw err;
+			// delete it
+			if (obj != null) {
+				adapter.log.debug("Delete '" + nanoleafDevices.shapes.deviceName + "' device...");
+				adapter.getStates(nanoleafDevices.shapes.deviceName + ".*", function (err, states) {
+					for (let id in states)
+						adapter.delObject(id);
+				});
+				adapter.deleteDevice(nanoleafDevices.shapes.deviceName);
+			}
+		});
+	}
 	// delete canvas device if not ignored
 	if (ignoreModel !== nanoleafDevices.canvas.model) {
 		// check if device is still existing
@@ -1385,6 +1406,7 @@ function SSDP_msearch_result(data) {
 		switch(data.st) {
 			case nanoleafDevices.lightpanels.SSDP_NT_ST:
 			case nanoleafDevices.canvas.SSDP_NT_ST:
+			case nanoleafDevices.Shapes.SSDP_NT_ST:
 				let devInfo;
 
 				adapter.log.debug("SSDP M-Search found device with USN: " + data.usn + " and OpenAPI location: " + data.location);
