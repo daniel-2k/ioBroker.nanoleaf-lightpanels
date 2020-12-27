@@ -52,6 +52,9 @@ You can use the nanoleaf vis demo project found in the /vis subfolder on github.
 
 ## Changelog
 
+### 1.1.1 (2020-12-27)
+* (daniel_2k) fixed: error in device detection
+
 ### 1.1.0 (2020-12-27)
 * (daniel_2k) new: support nanoleaf Shapes
 

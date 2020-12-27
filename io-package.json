@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "nanoleaf-lightpanels",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "news": {
+      "1.1.1": {
+        "en": "fixed device detection",
+        "de": "Geräteerkennung gefixt"
+      },
       "1.1.0": {
         "en": "Shapes are supported",
         "de": "Shapes werden untersützt"

@@ -22,7 +22,7 @@ const msearch_st = "ssdp:all";					// Service type for MESEARCH -> all to develo
 // nanoleaf device definitions
 const nanoleafDevices = { lightpanels:	{ model: "NL22", deviceName: "LightPanels", name: "Light Panels", SSDP_NT_ST: "nanoleaf_aurora:light", SSEFirmware: "3.1.0" },
 						  canvas:		{ model: "NL29", deviceName: "Canvas", name: "Canvas", SSDP_NT_ST: "nanoleaf:nl29", SSEFirmware: "1.1.0" },
-						  Shapes:		{ model: "NL42", deviceName: "Shapes", name: "Shapes", SSDP_NT_ST: "nanoleaf:nl42", SSEFirmware: "1.0.0" }  };
+						  shapes:		{ model: "NL42", deviceName: "Shapes", name: "Shapes", SSDP_NT_ST: "nanoleaf:nl42", SSEFirmware: "1.0.0" }  };
 
 // variables
 let auroraAPI;							// Instance of auroraAPI-Client
