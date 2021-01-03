@@ -8,21 +8,22 @@ let adapter;
 
 // constants
 const SSDPUPNP = require(__dirname + "/lib/node-upnp-ssdp");
-const dns = require("dns");
-const net = require("net");
-const AuroraApi = require(__dirname + "/lib/nanoleaf-aurora-api");
-const stateExcludes = ["brightness_duration"];	// Exclude list for states
-const minPollingInterval = 500;					// milliseconds
-const minReconnectInterval = 10;				// seconds
-const defaultTimeout = 10000;
-const keepAliveInterval = 75000;				// interval in ms when device is not alive anymore
-const ssdp_mSearchTimeout = 5000;				// time to wait for getting SSDP answers for a MSEARCH
-const msearch_st = "ssdp:all";					// Service type for MESEARCH -> all to develop all kind of nanoleaf devices
+const DNS = require("dns");
+const NET = require("net");
+const AURORA_API = require(__dirname + "/lib/nanoleaf-aurora-api");
+const STATE_EXCLUDES = ["brightness_duration"];	// Exclude list for states
+const MIN_POLLING_INTERVAL = 500;				// minimum polling interval in milliseconds
+const MIN_RECONNECT_INTERVAL = 10;				// minimum interval for reconnect attempts in seconds
+const DEFAULT_TIMEOUT = 10000;
+const KEEPALIVE_INTERVAL = 75000;				// interval in ms when device is not alive anymore
+const MIN_KEEPALIVE_POLLING_INTERVAL = 10;		// minimum interval in seconds for polling keep alive detection
+const SSDP_MSEARCH_TIMEOUT = 5000;				// time to wait for getting SSDP answers for a MSEARCH
+const MSEARCH_ST = "ssdp:all";					// Service type for MESEARCH -> all to develop all kind of nanoleaf devices
 
 // nanoleaf device definitions
-const nanoleafDevices = { lightpanels:	{ model: "NL22", deviceName: "LightPanels", name: "Light Panels", SSDP_NT_ST: "nanoleaf_aurora:light", SSEFirmware: "3.1.0" },
-						  canvas:		{ model: "NL29", deviceName: "Canvas", name: "Canvas", SSDP_NT_ST: "nanoleaf:nl29", SSEFirmware: "1.1.0" },
-						  shapes:		{ model: "NL42", deviceName: "Shapes", name: "Shapes", SSDP_NT_ST: "nanoleaf:nl42", SSEFirmware: "1.0.0" }  };
+const NANOLEAF_DEVICES = { lightpanels:	{ model: "NL22", deviceName: "LightPanels", name: "Light Panels", SSDP_NT_ST: "nanoleaf_aurora:light", SSEFirmware: "3.1.0" },
+						   canvas:		{ model: "NL29", deviceName: "Canvas", name: "Canvas", SSDP_NT_ST: "nanoleaf:nl29", SSEFirmware: "1.1.0" },
+						   shapes:		{ model: "NL42", deviceName: "Shapes", name: "Shapes", SSDP_NT_ST: "nanoleaf:nl42", SSEFirmware: "1.0.0" }  };
 
 // variables
 let auroraAPI;							// Instance of auroraAPI-Client
@@ -44,6 +45,7 @@ let SSDP_mSearchTimer;
 
 let pollingInterval;
 let reconnectInterval;
+let keepAlivePollingInterval;
 
 function startAdapter(options) {
 	options = options || {};
@@ -83,7 +85,7 @@ function startAdapter(options) {
 
 									let messageObj = {};
 
-									AuroraApi.getAuthToken(obj.message.host, obj.message.port)
+									AURORA_API.getAuthToken(obj.message.host, obj.message.port)
 										.then(function(authToken) {
 											messageObj.message = "SuccessGetAuthToken";
 											messageObj.authToken = authToken;
@@ -292,7 +294,7 @@ function processCommandQueue() {
 							});
 							break;
 		// no valid command -> skip and warn if not in exclude list
-		default: 			if (!stateExcludes.includes(stateName)) adapter.log.warn("Command for state '" + stateName + "\ invalid, skipping...");
+		default: 			if (!STATE_EXCLUDES.includes(stateName)) adapter.log.warn("Command for state '" + stateName + "\ invalid, skipping...");
 							processCommandQueue();
 		}
 }
@@ -373,8 +375,15 @@ function getDevice(URL, name) {
 }
 
 function StartPollingTimer() {
-	pollingTimer = setTimeout(statusUpdate, pollingInterval);
-	adapter.log.debug("Polling timer started with " + pollingInterval + " ms");
+	let interval;
+
+	// if SSE with keep alive polling enables, use keep alive polling interval instead of update polling interval
+	if (SSEenabled && adapter.config.keepAlivePolling)
+		interval = keepAlivePollingInterval * 1000;
+	else interval = pollingInterval;
+
+	pollingTimer = setTimeout(statusUpdate, interval, true);
+	adapter.log.debug("Polling timer started with " + interval + " ms");
 }
 
 function StopPollingTimer() {
@@ -398,7 +407,7 @@ function resetKeepAliveTimer() {
 	clearTimeout(keepAliveTimer);
 	keepAliveTimer = setTimeout(function() {
 		reconnect("No ssdp:alive detected");
-	}, keepAliveInterval);
+	}, KEEPALIVE_INTERVAL);
 }
 
 // subscribe states changes on nanoleaf device using server sent events
@@ -407,7 +416,7 @@ function startSSE() {
 			if (error) adapter.log.error(error);
 			else {
 				adapter.log.debug("SSE data '" + JSON.stringify(data) + "' received!");
-				statusUpdate(data);
+				statusUpdate(false, data);
 			}
 		})
 		.then(function () {
@@ -468,70 +477,80 @@ function logApiError(msg, err) {
 }
 
 // Update states via polling
-function statusUpdate(data) {
-	// full update via polling
-	if (pollingTimer)
+function statusUpdate(polling, data) {
+	// polling mode
+	if (polling)
 		auroraAPI.getInfo()
 			.then(function(info) {
 				StartPollingTimer();	// restart polling timer for next update
-				// update States
-				writeStates(JSON.parse(info));
+
+				// update states only when no SSE is used (skip updates when keep alive polling is active)
+				if (!SSEenabled) {
+					adapter.log.debug("Updating changed states...");
+					writeStates(JSON.parse(info));
+				}
 			})
 			.catch(function(err) {
 				adapter.log.debug("Updating states failed: " + formatError(err));
 				reconnect(err);
 			});
-	// Update via SSE
-	else  {
-		var updateColorRGB = false;
+	// SSE mode
+	else {
+		try {
+			var updateColorRGB = false;
 
-		for (var event of data.events) {
-			switch(data.eventID) {
-				case AuroraApi.Events.state: 	switch (event.attr) {
-													case AuroraApi.StateAttributes.on: 			writeState("state", event.value);
-																								break;
-													case AuroraApi.StateAttributes.brightness: 	writeState("brightness", event.value);
-																								updateColorRGB = true;
-																								break;
-													case AuroraApi.StateAttributes.hue: 		writeState("hue", event.value);
-																								updateColorRGB = true;
-																								break;
-													case AuroraApi.StateAttributes.saturation:	writeState("saturation", event.value);
-																								updateColorRGB = true;
-																								break;
-													case AuroraApi.StateAttributes.cct: 		writeState("colorTemp", event.value);
-																								break;
-													case AuroraApi.StateAttributes.colorMode: 	writeState("colorMode", event.value);
-																								break;
-													default: 									adapter.log.warn("Attribute '" + event.attribute + "' for event ID '" + data.eventID + "' is not implemented. Please report that to the developer!");
-												}
-												break;
-				case AuroraApi.Events.effects:	switch (event.attr) {
-													case AuroraApi.EventAttributes.event:		writeState("effect", event.value);
-																								break;
-													case AuroraApi.EventAttributes.eventList:	updateEventList(event.value);
-																								break;
-													default: 									adapter.log.warn("Attribute '" + event.attribute + "' for event ID '" + data.eventID + "' is not implemented. Please report that to the developer!");
-												}
-												break;
-				case AuroraApi.Events.touch:	writeState("touch.gesture", event.gesture, true);
-												writeState("touch.panelID", event.panelId, true);
-												break;
-				default: adapter.log.warn("Invalid eventID '" + data.eventID + "' received from device. Please report that to the developer!");
+			for (var event of data.events) {
+				switch(data.eventID) {
+					case AURORA_API.Events.state: 	switch (event.attr) {
+														case AURORA_API.StateAttributes.on: 		writeState("state", event.value);
+																									break;
+														case AURORA_API.StateAttributes.brightness: writeState("brightness", event.value);
+																									updateColorRGB = true;
+																									break;
+														case AURORA_API.StateAttributes.hue: 		writeState("hue", event.value);
+																									updateColorRGB = true;
+																									break;
+														case AURORA_API.StateAttributes.saturation:	writeState("saturation", event.value);
+																									updateColorRGB = true;
+																									break;
+														case AURORA_API.StateAttributes.cct: 		writeState("colorTemp", event.value);
+																									break;
+														case AURORA_API.StateAttributes.colorMode: 	writeState("colorMode", event.value);
+																									break;
+														default: 									adapter.log.warn("Attribute '" + event.attribute + "' for event ID '" + data.eventID + "' is not implemented. Please report that to the developer!");
+													}
+													break;
+					case AURORA_API.Events.effects:	switch (event.attr) {
+														case AURORA_API.EventAttributes.event:		writeState("effect", event.value);
+																									break;
+														case AURORA_API.EventAttributes.eventList:	updateEventList(event.value);
+																									break;
+														default: 									adapter.log.warn("Attribute '" + event.attribute + "' for event ID '" + data.eventID + "' is not implemented. Please report that to the developer!");
+													}
+													break;
+					case AURORA_API.Events.touch:	writeState("touch.gesture", event.gesture, true);
+													writeState("touch.panelID", event.panelId, true);
+													break;
+					default: adapter.log.warn("Invalid eventID '" + data.eventID + "' received from device. Please report that to the developer!");
+				}
+			}
+			// update colorRGB if colorMode = hs if necessary
+			if (updateColorRGB) {
+				// read  old state
+				adapter.getStates(NLdevice.deviceName + ".*", function (err, states) {
+					if (err) adapter.log.error("Error reading States from '" + NLdevice.deviceName + "' " + err + ". No Update of 'colorRGB'!");
+					else {
+						if (states[adapter.namespace + "." + NLdevice.deviceName + ".colorMode"].val == "hs")
+							writeState("colorRGB", HSVtoRGB(states[adapter.namespace + "." + NLdevice.deviceName + ".hue"].val,
+															states[adapter.namespace + "." + NLdevice.deviceName + ".saturation"].val,
+															states[adapter.namespace + "." + NLdevice.deviceName + ".brightness"].val));
+					}
+				});
 			}
 		}
-		// update colorRGB if colorMode = hs if necessary
-		if (updateColorRGB) {
-			// read  old state
-			adapter.getStates(NLdevice.deviceName + ".*", function (err, states) {
-				if (err) adapter.log.error("Error reading States from '" + NLdevice.deviceName + "' " + err + ". No Update of 'colorRGB'!");
-				else {
-					if (states[adapter.namespace + "." + NLdevice.deviceName + ".colorMode"].val == "hs")
-						writeState("colorRGB", HSVtoRGB(states[adapter.namespace + "." + NLdevice.deviceName + ".hue"].val,
-														states[adapter.namespace + "." + NLdevice.deviceName + ".saturation"].val,
-														states[adapter.namespace + "." + NLdevice.deviceName + ".brightness"].val));
-				}
-			});
+		catch (e) {
+			adapter.log.error("Invalid data received from nanoleaf controller, cannot process!");
+			adapter.log.debug("Invalid data: " + JSON.stringify(data));
 		}
 	}
 }
@@ -623,7 +642,7 @@ function setChangedState(stateID, oldState, newStateValue, forceUpdate = false) 
 	}
 }
 
-// write changes eventlist state and states of effect state
+// write changes event list state and states of effect state
 function updateEventList(effectsArray) {
 	let effectsList;
 	let effectsStates = {};
@@ -663,40 +682,51 @@ function SSDP_mSearch(callback) {
 	// clear device list
 	SSDP_devices = [];
 
-	SSDP.mSearch(msearch_st);
+	SSDP.mSearch(MSEARCH_ST);
 	// start timer for collecting SSDP responses
-	SSDP_mSearchTimer = setTimeout(callback, ssdp_mSearchTimeout, SSDP_devices);
+	SSDP_mSearchTimer = setTimeout(callback, SSDP_MSEARCH_TIMEOUT, SSDP_devices);
 }
 
 // Create nanoleaf device
 function createNanoleafDevice(deviceInfo, callback) {
-	let model = deviceInfo.model;
-	let rhythmAvailable =  typeof deviceInfo.rhythm === "object";
-	let rhythmConnected = rhythmAvailable && deviceInfo.rhythm.rhythmConnected;
+	let model;
+	let rhythmAvailable;
+	let rhythmConnected;
 
-	switch (model) {
-		// LightPanels
-		case nanoleafDevices.lightpanels.model:
-			NLdevice = nanoleafDevices.lightpanels;
-			break;
-		// Canvas
-		case nanoleafDevices.canvas.model:
-			NLdevice = nanoleafDevices.canvas;
-			break;
-		// Shapes
-		case nanoleafDevices.shapes.model:
-			NLdevice = nanoleafDevices.shapes;
-			break;
-		// Canvas are fallback
-		default:
-			NLdevice = nanoleafDevices.canvas;
-			adapter.log.warn("nanoleaf device  '" + model + "' unknown! Using Canvas device as fallback. Please report this to the developer!");
+	try {
+		model = deviceInfo.model;
+		rhythmAvailable =  typeof deviceInfo.rhythm === "object";
+		rhythmConnected = rhythmAvailable && deviceInfo.rhythm.rhythmConnected;
+
+		switch (model) {
+			// LightPanels
+			case NANOLEAF_DEVICES.lightpanels.model:
+				NLdevice = NANOLEAF_DEVICES.lightpanels;
+				break;
+			// Canvas
+			case NANOLEAF_DEVICES.canvas.model:
+				NLdevice = NANOLEAF_DEVICES.canvas;
+				break;
+			// Shapes
+			case NANOLEAF_DEVICES.shapes.model:
+				NLdevice = NANOLEAF_DEVICES.shapes;
+				break;
+			// Canvas are fallback
+			default:
+				NLdevice = NANOLEAF_DEVICES.canvas;
+				adapter.log.warn("nanoleaf device  '" + model + "' unknown! Using Canvas device as fallback. Please report this to the developer!");
+		}
+
+		// enable SSE instead of polling for firmwares higher then in specification given and disable SSE when selected in admin
+		if (deviceInfo.firmwareVersion > NLdevice.SSEFirmware && !adapter.config.disableSSE)
+			SSEenabled = true;
+		else SSEenabled = false;
 	}
-
-	// enable SSE instead of polling for firmwares higher then in specification given and disable SSE when selected in admin
-	if (deviceInfo.firmwareVersion > NLdevice.SSEFirmware && !adapter.config.disableSSE)
-		SSEenabled = true;
-	else SSEenabled = false;
+	catch (e) {
+		adapter.log.error("Invalid device info received from nanoleaf controller. Cannot detect device. Please check device!");
+		adapter.log.debug("Invalid device info: " + JSON.stringify(deviceInfo));
+		adapter.stop();		// stop adapter, cannot proceed here!
+	}
 
 	deleteNanoleafDevices(model);	// delete all other nanoleaf device models if existing
 
@@ -968,7 +998,7 @@ function createNanoleafDevice(deviceInfo, callback) {
 			}
 		);
 		// touch event only for Canvas and Shapes
-		if (NLdevice == nanoleafDevices.canvas || NLdevice == nanoleafDevices.shapes) {
+		if (NLdevice == NANOLEAF_DEVICES.canvas || NLdevice == NANOLEAF_DEVICES.shapes) {
 			// create "touch" Channel
 			adapter.setObjectNotExists (NLdevice.deviceName + ".touch",
 				{
@@ -1051,50 +1081,50 @@ function createNanoleafDevice(deviceInfo, callback) {
 //		Parameter 'ignoreModel': ignore deletion of this device model
 function deleteNanoleafDevices(ignoreModel) {
 	// delete shapes device if not ignored
-	if (ignoreModel !== nanoleafDevices.shapes.model) {
+	if (ignoreModel !== NANOLEAF_DEVICES.shapes.model) {
 		// check if device is still existing
-		adapter.getObject(nanoleafDevices.shapes.deviceName, function (err, obj) {
+		adapter.getObject(NANOLEAF_DEVICES.shapes.deviceName, function (err, obj) {
 			if (err) throw err;
 			// delete it
 			if (obj != null) {
-				adapter.log.debug("Delete '" + nanoleafDevices.shapes.deviceName + "' device...");
-				adapter.getStates(nanoleafDevices.shapes.deviceName + ".*", function (err, states) {
+				adapter.log.debug("Delete '" + NANOLEAF_DEVICES.shapes.deviceName + "' device...");
+				adapter.getStates(NANOLEAF_DEVICES.shapes.deviceName + ".*", function (err, states) {
 					for (let id in states)
 						adapter.delObject(id);
 				});
-				adapter.deleteDevice(nanoleafDevices.shapes.deviceName);
+				adapter.deleteDevice(NANOLEAF_DEVICES.shapes.deviceName);
 			}
 		});
 	}
 	// delete canvas device if not ignored
-	if (ignoreModel !== nanoleafDevices.canvas.model) {
+	if (ignoreModel !== NANOLEAF_DEVICES.canvas.model) {
 		// check if device is still existing
-		adapter.getObject(nanoleafDevices.canvas.deviceName, function (err, obj) {
+		adapter.getObject(NANOLEAF_DEVICES.canvas.deviceName, function (err, obj) {
 			if (err) throw err;
 			// delete it
 			if (obj != null) {
-				adapter.log.debug("Delete '" + nanoleafDevices.canvas.deviceName + "' device...");
-				adapter.getStates(nanoleafDevices.canvas.deviceName + ".*", function (err, states) {
+				adapter.log.debug("Delete '" + NANOLEAF_DEVICES.canvas.deviceName + "' device...");
+				adapter.getStates(NANOLEAF_DEVICES.canvas.deviceName + ".*", function (err, states) {
 					for (let id in states)
 						adapter.delObject(id);
 				});
-				adapter.deleteDevice(nanoleafDevices.canvas.deviceName);
+				adapter.deleteDevice(NANOLEAF_DEVICES.canvas.deviceName);
 			}
 		});
 	}
 	// delete light panels device if not ignored
-	if (ignoreModel !== nanoleafDevices.lightpanels.model) {
+	if (ignoreModel !== NANOLEAF_DEVICES.lightpanels.model) {
 		// check if device is still existing
-		adapter.getObject(nanoleafDevices.lightpanels.deviceName, function (err, obj) {
+		adapter.getObject(NANOLEAF_DEVICES.lightpanels.deviceName, function (err, obj) {
 			if (err) throw err;
 			// delete it
 			if (obj != null) {
-				adapter.log.debug("Delete '" + nanoleafDevices.lightpanels.deviceName + "' device...");
-				adapter.getStates(nanoleafDevices.lightpanels.deviceName + ".*", function (err, states) {
+				adapter.log.debug("Delete '" + NANOLEAF_DEVICES.lightpanels.deviceName + "' device...");
+				adapter.getStates(NANOLEAF_DEVICES.lightpanels.deviceName + ".*", function (err, states) {
 					for (let id in states)
 						adapter.delObject(id);
 				});
-				adapter.deleteDevice(nanoleafDevices.lightpanels.deviceName);
+				adapter.deleteDevice(NANOLEAF_DEVICES.lightpanels.deviceName);
 			}
 		});
 	}
@@ -1258,20 +1288,27 @@ function startAdapterProcessing(deviceInfo) {
 	// subscribe state changes of nanoleaf device
 	adapter.subscribeStates(NLdevice.deviceName + ".*");
 	// subscribe rhythmMode when Light Panels device
-	if (deviceInfo.model == nanoleafDevices.lightpanels.model) adapter.subscribeStates("Rhythm.rhythmMode");
+	if (deviceInfo.model == NANOLEAF_DEVICES.lightpanels.model) adapter.subscribeStates("Rhythm.rhythmMode");
 
 	// if SSE enabled start SSE and bind SSDP notify events for keep alive
 	if (SSEenabled) {
 		startSSE();
 
-		// handle SSDP Notify messages
-		SSDP.on("DeviceAvailable:" + NLdevice.SSDP_NT_ST, SSDP_notify);
-		// handle device becomes unavailable
-		SSDP.on("DeviceUnavailable:" + NLdevice.SSDP_NT_ST, SSDP_goodbye);
+		// Keep alive with polling when enabled
+		if (adapter.config.keepAlivePolling) {
+			StartPollingTimer(); // start polling timer for updates
+		}
+		// keep alive with SSDP notify
+		else {
+			// handle SSDP Notify messages
+			SSDP.on("DeviceAvailable:" + NLdevice.SSDP_NT_ST, SSDP_notify);
+			// handle device becomes unavailable
+			SSDP.on("DeviceUnavailable:" + NLdevice.SSDP_NT_ST, SSDP_goodbye);
 
-		adapter.log.debug("SSDP notify events initialized!");
+			adapter.log.debug("SSDP notify events initialized!");
 
-		resetKeepAliveTimer();
+			resetKeepAliveTimer();
+		}
 	}
 	// else use polling
 	else StartPollingTimer(); // start polling timer for updates
@@ -1283,10 +1320,18 @@ function stopAdapterProcessing() {
 	// if SSE enabled stop SSE and unbind SSDP events
 	if (SSEenabled) {
 		stopSSE();
-		// remove SSDP notify events
-		SSDP.removeAllListeners("DeviceAvailable:" + NLdevice.SSDP_NT_ST, SSDP_notify);
-		SSDP.removeAllListeners("DeviceUnavailable:" + NLdevice.SSDP_NT_ST, SSDP_goodbye);
-		adapter.log.debug("SSDP notify events disabled!");
+
+		// stop keep alive polling when enabled
+		if (adapter.config.keepAlivePolling) {
+			StopPollingTimer();
+		}
+		// remove SSDP events only if no polling is active
+		else {
+			// remove SSDP notify events
+			SSDP.removeAllListeners("DeviceAvailable:" + NLdevice.SSDP_NT_ST, SSDP_notify);
+			SSDP.removeAllListeners("DeviceUnavailable:" + NLdevice.SSDP_NT_ST, SSDP_goodbye);
+			adapter.log.debug("SSDP notify events disabled!");
+		}
 	}
 	// else stop polling
 	else StopPollingTimer();
@@ -1366,7 +1411,7 @@ function SSDP_notify(data) {
 			// check device
 			if (dev) {
 				// if adapter host is IP, directly check if match
-				if (net.isIPv4(adapter.config.host)) {
+				if (NET.isIPv4(adapter.config.host)) {
 					if (dev.host == adapter.config.host) {
 						NL_UUID = data.usn;
 						adapter.log.debug("nanoleaf " + NL_UUID + " from device '" + dev.host + "' set!");
@@ -1375,7 +1420,7 @@ function SSDP_notify(data) {
 				}
 				// resolve hostname and then match
 				else {
-					dns.lookup(adapter.config.host, function(err, address) {
+					DNS.lookup(adapter.config.host, function(err, address) {
 						if (err) adapter.log.error("Error while looking up DNS '" + adapter.config.host + "'. Error: " + err.code + " (" + err.message + ").");
 						else if (dev.host == address) {
 							NL_UUID = data.usn;
@@ -1404,9 +1449,9 @@ function SSDP_msearch_result(data) {
 	// only when timer for collecting devices is running
 	if (SSDP_mSearchTimer) {
 		switch(data.st) {
-			case nanoleafDevices.lightpanels.SSDP_NT_ST:
-			case nanoleafDevices.canvas.SSDP_NT_ST:
-			case nanoleafDevices.Shapes.SSDP_NT_ST:
+			case NANOLEAF_DEVICES.lightpanels.SSDP_NT_ST:
+			case NANOLEAF_DEVICES.canvas.SSDP_NT_ST:
+			case NANOLEAF_DEVICES.Shapes.SSDP_NT_ST:
 				let devInfo;
 
 				adapter.log.debug("SSDP M-Search found device with USN: " + data.usn + " and OpenAPI location: " + data.location);
@@ -1433,10 +1478,12 @@ function initSSDP() {
 function init() {
 	try {
 		// initialize timer intervals (override when interval is to small)
-		if (adapter.config.pollingInterval < minPollingInterval) pollingInterval = minPollingInterval;
+		if (adapter.config.pollingInterval < MIN_POLLING_INTERVAL) pollingInterval = MIN_POLLING_INTERVAL;
 		else pollingInterval = adapter.config.pollingInterval;
-		if (adapter.config.reconnectInterval < minReconnectInterval) reconnectInterval = minReconnectInterval;
+		if (adapter.config.reconnectInterval < MIN_RECONNECT_INTERVAL) reconnectInterval = MIN_RECONNECT_INTERVAL;
 		else reconnectInterval = adapter.config.reconnectInterval;
+		if (adapter.config.keepAlivePollingInterval < MIN_KEEPALIVE_POLLING_INTERVAL) keepAlivePollingInterval = MIN_KEEPALIVE_POLLING_INTERVAL;
+		else keepAlivePollingInterval = adapter.config.keepAlivePollingInterval;
 
 		initSSDP();		// fist initialize SSDP for MSEARCH events
 
@@ -1445,12 +1492,12 @@ function init() {
 			throw "Please check adapter config (host, port, authorization token) first!";
 
 		// initialize Aurora API
-		auroraAPI = new AuroraApi({
+		auroraAPI = new AURORA_API({
 			host: adapter.config.host,
 			base: "/api/v1/",
 			port: adapter.config.port,
 			accessToken: adapter.config.authtoken,
-			timeout: defaultTimeout
+			timeout: DEFAULT_TIMEOUT
 		});
 
 		// continue initialization with connecting

@@ -29,5 +29,8 @@
 	"SuccessGetAuthToken": "Authentifizierungs-Token anfordern erfolgreich!",
 	"disableSSE": "Server Sent Events (SSE) deaktivieren",
 	"adapterAddress": "Adapter-Adresse",
-	"Listen on all IPs": "Auf alle IPs hören"
+	"Listen on all IPs": "Auf alle IPs hören",
+	"keepAlivePolling": "Polling anstatt SSDP Notify Messages für Keep-Alive verwenden",
+	"keepAlivePollingInterval": "Keep-Alive Polling-Intervall",
+	"keepAlivePollingIntervalDec": "Intervall in Sekunden für Verbindungserkennung"
 }

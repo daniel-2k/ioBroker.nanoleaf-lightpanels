@@ -72,6 +72,9 @@
 		$("#pollingInterval").val(settings["pollingInterval"]);
 		$("#reconnectInterval").val(settings["reconnectInterval"]);
 		$("#disableSSE").prop("checked", settings["disableSSE"]);
+		$("#keepAlivePolling").prop("checked", settings["keepAlivePolling"]);
+		$("#keepAlivePollingInterval").val(settings["keepAlivePollingInterval"]);
+
 		// Adapter address
 		fillSelectIPs('#adapterAddress', settings.adapterAddress, false, true, function () {
                 $('#adapterAddress').select();
@@ -160,6 +163,8 @@
 		obj["reconnectInterval"] = $("#reconnectInterval").val();
 		obj["disableSSE"] = $("#disableSSE").is(":checked");
 		obj["adapterAddress"] = $("#adapterAddress").val();
+		obj["keepAlivePolling"] = $("#keepAlivePolling").is(":checked");
+		obj["keepAlivePollingInterval"] = $("#keepAlivePollingInterval").val();
 
 		callback(obj);
 	}
@@ -211,23 +216,38 @@
 			</div>
 			<div id="tab-advanced" class="col s12 page">
 				<div class="row">
-					<div class="input-field col s12 m8">
+					<div class="input-field col s12 m8 l6">
 						<select id="adapterAddress" class="value"></select>
 						<label for="adapterAddress" class="translate">adapterAddress</label>
 					</div>
-					<div class="input-field col s12 m12 l12">
+				</div>
+				<div class="row">
+					<div class="input-field col s12 m8 l6">
 						<input type="checkbox" class="value" id="disableSSE"/>
 						<label for="disableSSE" class="translate">disableSSE</label>
 					</div>
-					<div class="input-field col s12 m12 l12">
+				</div>
+				<div class="row">
+					<div class="input-field col s6 m6 l6">
 						<input type="number" class="value" id="pollingInterval" min="500" max="600000"/>
 						<label for="pollingInterval" class="translate">PollingInterval</label>
 						<span class="translate">PollingIntervalDesc</span>
 					</div>
-					<div class="input-field col s12 m12 l12">
+					<div class="input-field col s6 m6 l6">
 						<input type="number" class="value" id="reconnectInterval" min="10" max="21600"/>
 						<label for="reconnectInterval" class="translate">ReconnectInterval</label>
 						<span class="translate">ReconnectIntervalDesc</span>
+					</div>
+				</div>
+				<div class="row">
+					<div class="input-field col s6 m6 l6">
+						<input type="checkbox" class="value" id="keepAlivePolling"/>
+						<label for="keepAlivePolling" class="translate">keepAlivePolling</label>
+					</div>
+					<div class="input-field col s6 m6 l6">
+						<input type="number" class="value" id="keepAlivePollingInterval" min="10" max="21600"/>
+						<label for="keepAlivePollingInterval" class="translate">keepAlivePollingInterval</label>
+						<span class="translate">keepAlivePollingIntervalDec</span>
 					</div>
 				</div>
 			</div>

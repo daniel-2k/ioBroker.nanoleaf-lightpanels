@@ -33,4 +33,7 @@ systemDictionary = {
     "disableSSE": {                                  "en": "Disable Server Sent Events (SSE)",                "de": "Server Sent Events (SSE) deaktivieren"},
     "adapterAddress": {                              "en": "adapterAddress",                                  "de": "Adapter-Adresse"},
     "Listen on all IPs": {                           "en": "Listen on all IPs",                               "de": "Auf alle IPs hören"},
+    "keepAlivePolling": {                            "en": "Use polling instead of SSDP notify messages for keep alive detection", "de": "Polling anstatt SSDP Notify Messages für Keep-Alive verwenden"},
+    "keepAlivePollingInterval": {                    "en": "Keep alive polling intervall",                    "de": "Keep-Alive Polling-Intervall"},
+    "keepAlivePollingIntervalDec": {                 "en": "Interval in seconds for connection detection",    "de": "Intervall in Sekunden für Verbindungserkennung"},
 };

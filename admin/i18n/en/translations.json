@@ -29,5 +29,8 @@
 	"SuccessGetAuthToken": "Authentification token usccessfully obtained!",
 	"disableSSE": "Disable Server Sent Events (SSE)",
 	"adapterAddress": "adapterAddress",
-	"Listen on all IPs": "Listen on all IPs"
+	"Listen on all IPs": "Listen on all IPs",
+	"keepAlivePolling": "Use polling instead of SSDP notify messages for keep alive detection",
+	"keepAlivePollingInterval": "Keep alive polling intervall",
+	"keepAlivePollingIntervalDec": "Interval in seconds for connection detection"
 }
