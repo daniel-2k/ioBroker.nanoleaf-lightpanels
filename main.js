@@ -1374,9 +1374,14 @@ function connect(isReconnect) {
 			// is HTTP error
 			if (Number.isInteger(err)) {
 				// special message for 401 and 403
-				if (err == 401 || err == 403) messageDetail = "Permission denied, please check authorization token!";
-				adapter.log.error(message + messageDetail + " Stopping...");
-				adapter.stop();
+				if (err == 401 || err == 403) {
+					messageDetail = "Permission denied, please check authorization token!";
+					adapter.log.error(message + messageDetail);
+				}
+				else {
+					adapter.log.error(message + messageDetail + " Stopping...");
+					adapter.stop();
+				}
 			}
 			// other error, try to reconnect
 			else {
@@ -1451,7 +1456,7 @@ function SSDP_msearch_result(data) {
 		switch(data.st) {
 			case NANOLEAF_DEVICES.lightpanels.SSDP_NT_ST:
 			case NANOLEAF_DEVICES.canvas.SSDP_NT_ST:
-			case NANOLEAF_DEVICES.Shapes.SSDP_NT_ST:
+			case NANOLEAF_DEVICES.shapes.SSDP_NT_ST:
 				let devInfo;
 
 				adapter.log.debug("SSDP M-Search found device with USN: " + data.usn + " and OpenAPI location: " + data.location);

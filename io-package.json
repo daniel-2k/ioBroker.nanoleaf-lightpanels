@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "nanoleaf-lightpanels",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "news": {
+      "1.2.1": {
+        "en": "get a new authorization token is not possible when current set token is already invalid<br>device search in admin settings fixed<br>obtaining an authorization token is also possible when field is already filled",
+        "de": "Anfordern eines neuen Authorization Token ist möglich, wenn der aktuelle bereits ungültig ist<br>Geräte-Suche in den Einstellungen gefixt<br>Anfordern eines Authorization Token ist immer möglich, auch wenn das Feld gefüllt ist"
+      },
       "1.2.0": {
         "en": "possibility to use polling for keep alive detection instead of SSDP notify messages (for nanoleaf devices which stop sending SSDP notify packages)<br>small internal adjustments",
         "de": "Möglichkeit Polling for Verbindungserkennung zu nutzen anstatt SSDP Notify Messages (für nanoleaf Geräte die aufhören SSDP Notify Pakete zu senden)<br>kleine interne Anpassungen"
