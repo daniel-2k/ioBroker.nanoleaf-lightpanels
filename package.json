@@ -48,6 +48,7 @@
     "test:package": "mocha test/package --exit",
     "test:unit": "mocha test/unit --exit",
     "test:integration": "mocha test/integration --exit",
+    "lint": "eslint",
     "release": "node node_modules/@alcalzone/release-script/bin/release.js"
   },
   "bugs": {
