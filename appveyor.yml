@@ -3,8 +3,8 @@ environment:
   matrix:
     - nodejs_version: '10'
     - nodejs_version: '12'
-    - nodejs_version: '14'
 platform:
+  - x86
   - x64
 clone_folder: 'c:\projects\%APPVEYOR_PROJECT_NAME%'
 install:
@@ -13,11 +13,11 @@ install:
   - ps: 'if($NpmVersion -eq 5) { npm install -g npm@5 }'
   - ps: npm --version
   - npm install
-  - npm install winston@3.2.1
-  - 'npm install iobroker.js-controller@3.2.16 --production'
 test_script:
   - echo %cd%
   - node --version
   - npm --version
-  - npm test
+  - 'npm run test:package'
+  - 'npm run test:unit'
+  - 'npm run test:integration'
 build: 'off'
