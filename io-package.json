@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "nanoleaf-lightpanels",
-    "version": "1.3.0",
+    "version": "1.3.1",
     "news": {
+      "1.3.1": {
+        "en": "write acknowledge to states directly after receiving success state from API<br>ip address workaround also for device search to detect nanoleaf devices with missing host info through firmware bug<br>optimized device detection and device keep alive detection",
+        "de": "Bestätigung des Schreiben von States direkt nach Empfang der Erfolgsmeldung von API<br>IP-Adressen-Workaround auch für Gerätesuche, um nanoleaf-Geräte mit fehlender Hostinfo wegen Firmwarebug zu erkennen<br>Geräteerkennung und Keep-Alive-Erkennung optimiert"
+      },
       "1.3.0": {
         "en": "nanoleaf Lines and Elements are supported<br>added state for writing custom effects and reading effects<br>changed SSDP detection due to firmware bug for Canvas and Shapes<br>devices were not deleted completely on device identification change",
         "de": "nanoleaf Lines und Elements unterstütz<br>State für Schreiben von eigenen Effekten sowie Auslesen von Effekten hinzugefügt<br>SSDP-Erkennung wegen Firmware-Bug bei Canvas and Shapes geändert<br>Geräte wurden nicht vollständig gelöscht bei Änderung der Geräte-Identifikation"
