@@ -8,7 +8,7 @@
 
 [![NPM](https://nodei.co/npm/iobroker.nanoleaf-lightpanels.png?downloads=true)](https://nodei.co/npm/iobroker.nanoleaf-lightpanels/)
 
-This is an ioBroker adapter to control nanoleaf devices wich supports OpenAPI.
+This is an ioBroker adapter to control nanoleaf devices which support OpenAPI.
 
 ## Suported models
 * Light Panels
@@ -185,4 +185,4 @@ You can use the nanoleaf vis demo project found in the /vis subfolder on github.
 
 ## License
 The MIT License (MIT)
-Copyright (c) 2020 daniel_2k <daniel_2k@outlook.com>
+Copyright (c) 2021 daniel_2k <daniel_2k@outlook.com>
