@@ -34,7 +34,7 @@
     "underscore": ">= 1.13.2"
   },
   "devDependencies": {
-    "@alcalzone/release-script": "^3.5.4",
+    "@alcalzone/release-script": "^3.5.6",
     "@iobroker/testing": "^2.5.5",
     "axios": "^0.26.0",
     "chai": "^4.3.6",
