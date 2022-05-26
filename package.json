@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "@iobroker/adapter-core": "^2.6.0",
-    "eventsource": "^2.0.1",
+    "eventsource": "^2.0.2",
     "underscore": ">= 1.13.3"
   },
   "devDependencies": {
