@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "nanoleaf-lightpanels",
-    "version": "1.3.1",
+    "version": "1.4.0",
     "news": {
+      "1.4.0": {
+        "en": "use adapter-core for js-controller 5 compatibility",
+        "de": "Nutzung von adapter-core für Kompatibilität mit js-controller 5"
+      },
       "1.3.1": {
         "en": "write acknowledge to states directly after receiving success state from API<br>ip address workaround also for device search to detect nanoleaf devices with missing host info through firmware bug<br>optimized device detection and device keep alive detection",
         "de": "Bestätigung des Schreiben von States direkt nach Empfang der Erfolgsmeldung von API<br>IP-Adressen-Workaround auch für Gerätesuche, um nanoleaf-Geräte mit fehlender Hostinfo wegen Firmwarebug zu erkennen<br>Geräteerkennung und Keep-Alive-Erkennung optimiert"
@@ -68,19 +72,24 @@
         "de": "Adapter hat eigene nanoleaf-api-Bibliothek<br>Probleme mit Canvas behoben<br>Compact mode hinzugefügt<br>Handling der Device-States geändert<br>Problem nicht abbauender Command-Queue behoben"
       }
     },
-    "title": "nanoleaf Light Panels/Canvas",
+    "title": "nanoleaf",
     "titleLang": {
-      "en": "nanoleaf Light Panels/Canvas",
-      "de": "nanoleaf Light Panels/Canvas"
+      "en": "nanoleaf",
+      "de": "nanoleaf"
     },
     "desc": {
-      "en": "Controlling the nanoleaf Light Panels/Canvas/Shapes (fomerly nanoleaf Aurora) in ioBroker",
-      "de": "Steuerung der nanoleaf Light Panels/Canvas/Shapes (fomerly nanoleaf Aurora) in ioBroker"
+      "en": "Controlling the nanoleaf devices in ioBroker",
+      "de": "Steuerung von nanoleaf-Geräten in ioBroker"
     },
     "authors": [
       "daniel_2k <daniel_2k@outlook.com>"
     ],
     "platform": "Javascript/Node.js",
+    "dependencies": [
+      {
+        "js-controller": ">=3.3.22"
+      }
+    ],
     "license": "MIT",
     "mode": "daemon",
     "icon": "nanoleaf-lightpanels.png",

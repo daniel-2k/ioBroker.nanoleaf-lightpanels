@@ -3,7 +3,7 @@
 "use strict";
 
 // you have to require the utils module and call adapter function
-let utils = require(__dirname + "/lib/utils"); // Get common adapter utils
+let utils = require("@iobroker/adapter-core"); // Get common adapter utils
 let adapter;
 
 // constants
