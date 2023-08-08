@@ -69,6 +69,19 @@
         "zh-cn": "利用污染物进行活性检查的可能性,而不是全国免疫方案通知(停止发送SSDP信息包的纳叶装置)"
       }
     },
+    "titleLang": {
+      "en": "nanoleaf",
+      "de": "nanoleaf",
+      "ru": "nanoleaf",
+      "pt": "nanoleaf",
+      "nl": "nanoleaf",
+      "fr": "nanoleaf",
+      "it": "nanoleaf",
+      "es": "nanoleaf",
+      "pl": "nanoleaf",
+      "uk": "nanoleaf",
+      "zh-cn": "nanoleaf"
+    },
     "desc": {
       "en": "Controlling the nanoleaf devices in ioBroker",
       "de": "Steuerung von nanoleaf-Geräten in ioBroker",
