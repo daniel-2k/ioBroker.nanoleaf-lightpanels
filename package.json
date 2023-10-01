@@ -36,7 +36,7 @@
   "devDependencies": {
     "@iobroker/testing": "^4.1.0",
     "axios": "^1.4.0",
-    "chai": "^4.3.7",
+    "chai": "^4.3.10",
     "eslint": "^8.46.0",
 
     "gulp": "^4.0.2",
