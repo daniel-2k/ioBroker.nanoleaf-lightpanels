@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "nanoleaf-lightpanels",
-    "version": "1.4.0",
+    "version": "1.5.0",
     "news": {
+      "1.5.0": {
+        "en": "added Skylight device<br>use keep alive for HTTP connections to avoid SNAT port exhaustion (e.g. Docker environments)",
+        "de": "Skylight hinzugefügt<br>verwende Keep Alive für HTTP-Verbindungen um SNAT port exhaustion (z.B. bei Docker Umgebungen) zu verhindern",
+        "ru": "добавленное устройство Skylight<br> сохраняет жизнь для HTTP-соединений, чтобы избежать исчерпания порта SNAT (например, среды Docker)",
+        "pt": "adicionado dispositivo Skylight<br>use manter vivo para conexões HTTP para evitar a exaustão da porta SNAT (por exemplo, ambientes Docker)",
+        "nl": "toegevoegd Skylight apparaat <br>use in leven houden voor HTTP-verbindingen om SNAT-poort uitputting te voorkomen (bijv. Docker omgevingen)",
+        "fr": "ajout du périphérique Skylight<br>utilisation garder en vie pour les connexions HTTP pour éviter l'épuisement du port SNAT (par exemple, les environnements Docker)",
+        "it": "aggiunto dispositivo Skylight <br>use mantenere in vita per le connessioni HTTP per evitare esaurimento della porta SNAT (ad esempio ambienti Docker)",
+        "es": "agregado dispositivo Skylight identificador confianzause mantener vivo para conexiones HTTP para evitar el agotamiento del puerto SNAT (por ejemplo, entornos Docker)",
+        "pl": "dodano urządzenie Skylight < br > zachować przy życiu połączenia HTTP, aby uniknąć wyczerpania portu SNAT (np. środowiska Docker)",
+        "uk": "додано пристрій Skylight <br>use зберегти живий для HTTP-з'єднань, щоб уникнути вичерпання портів SNAT (наприклад, Docker оточення)",
+        "zh-cn": "为 HTTP 连接添加了 Skylight 设备<br> use 恒生, 以避免 SNAT 端口耗尽( 如 Docker 环境)"
+      },
       "1.4.0": {
         "en": "use adapter-core for js-controller 5 compatibility",
         "de": "Nutzung von adapter-core für Kompatibilität mit js-controller 5",

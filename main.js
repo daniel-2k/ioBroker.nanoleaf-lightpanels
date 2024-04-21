@@ -25,8 +25,8 @@ const NANOLEAF_DEVICES = { lightpanels:	{ model: "NL22", deviceName: "LightPanel
 						   canvas:		{ model: "NL29", deviceName: "Canvas", name: "Canvas", SSDP_NT_ST: "nanoleaf:nl29", SSEFirmware: "1.1.0", hasTouch: true },
 						   shapes:		{ model: "NL42", deviceName: "Shapes", name: "Shapes", SSDP_NT_ST: "nanoleaf:nl42", SSEFirmware: "4.0.2", hasTouch: true },
 						   elements:	{ model: "NL52", deviceName: "Elements", name: "Elements", SSDP_NT_ST: "nanoleaf:nl52", SSEFirmware: "1.0.0", hasTouch: true },
-						   lines:		{ model: "NL59", deviceName: "Lines", name: "Lines", SSDP_NT_ST: "nanoleaf:nl59", SSEFirmware: "1.0.0", hasTouch: false }  };
-
+						   lines:		{ model: "NL59", deviceName: "Lines", name: "Lines", SSDP_NT_ST: "nanoleaf:nl59", SSEFirmware: "1.0.0", hasTouch: false },
+						   skylight:	{ model: "NL64", deviceName: "Skylight", name: "Skylight", SSDP_NT_ST: "nanoleaf:nl64", SSEFirmware: "1.0.0", hasTouch: false }  };
 // variables
 let auroraAPI;							// Instance of auroraAPI-Client
 let isConnected;						// indicates connection to device (same value as info.connection state)
