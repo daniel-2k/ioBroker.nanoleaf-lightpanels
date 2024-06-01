@@ -29,7 +29,7 @@
     "url": "https://github.com/daniel-2k/ioBroker.nanoleaf-lightpanels"
   },
   "dependencies": {
-    "@iobroker/adapter-core": "^2.6.8",
+    "@iobroker/adapter-core": "^2.6.12",
     "eventsource": "^2.0.2",
     "underscore": ">= 1.13.6"
   },
