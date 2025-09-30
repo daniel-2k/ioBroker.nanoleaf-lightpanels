@@ -127,12 +127,12 @@
     "platform": "Javascript/Node.js",
     "dependencies": [
       {
-        "js-controller": ">=5.1.1"
+        "js-controller": ">=6.0.11"
       }
     ],
     "globalDependencies": [
       {
-        "admin": ">=6.0.0"
+        "admin": ">=7.0.0"
       }
     ],
     "licenseInformation": {
