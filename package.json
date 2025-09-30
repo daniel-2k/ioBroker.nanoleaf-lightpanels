@@ -40,7 +40,7 @@
   "devDependencies": {
     "@iobroker/testing": "^5.1.1",
     "chai": "^4.3.10",
-    "eslint": "^9.6.0",
+    "eslint": "^8.57.0",
     "axios": "^1.7.2",
     "chai": "^4.4.1",
     "eslint": "^8.52.0",
