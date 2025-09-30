@@ -1,12 +1,12 @@
 {
   "name": "iobroker.nanoleaf-lightpanels",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "ioBroker adapter to control nanoleaf devices",
   "author": {
     "name": "daniel_2k",
     "email": "daniel_2k@outlook.com"
   },
-  "maintainers": [
+  "contributors": [
     {
       "name": "daniel_2k",
       "email": "daniel_2k@outlook.com"
@@ -15,6 +15,7 @@
   "homepage": "https://github.com/daniel-2k/ioBroker.nanoleaf-lightpanels",
   "license": "MIT",
   "keywords": [
+    "iobroker",
     "nanoleaf",
     "light panels",
     "canvas",
@@ -28,9 +29,12 @@
     "type": "git",
     "url": "https://github.com/daniel-2k/ioBroker.nanoleaf-lightpanels"
   },
+  "engines": {
+      "node": ">=18"
+  },
   "dependencies": {
-    "@iobroker/adapter-core": "^2.6.8",
-    "eventsource": "^2.0.2",
+    "@iobroker/adapter-core": "^3.2.3",
+    "eventsource": ">=2.0.2",
     "underscore": ">= 1.13.6"
   },
   "devDependencies": {

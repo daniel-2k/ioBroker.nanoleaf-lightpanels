@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "nanoleaf-lightpanels",
-    "version": "1.5.0",
+    "version": "1.5.1",
     "news": {
+      "1.5.1": {
+        "en": "update dependencies and fixed ioBroker Check / Service Bot findings",
+        "de": "Aktualisierung der Abhängigkeiten und Behebung der ioBroker Check / Service Bot-Funde.",
+        "ru": "обновлены зависимости и исправлены найденные ошибки ioBroker Check / Service Bot",
+        "pt": "Atualização de dependências e correção de problemas identificados pelo ioBroker Check / Service Bot.",
+        "nl": "Bijgewerkte afhankelijkheden en oplossingen voor ioBroker Check / Service Bot bevindingen.",
+        "fr": "Mise à jour des dépendances et correction des résultats de ioBroker Check / Service Bot.",
+        "it": "Aggiornamento delle dipendenze e risoluzione dei problemi individuati da ioBroker Check/Service Bot",
+        "es": "actualización de dependencias y corrección de hallazgos del ioBroker Check / Service Bot.",
+        "pl": "zaktualizowano zależności i naprawiono znalezione problemy z ioBroker Check / Service Bot.",
+        "uk": "оновлено залежності та виправлені помилки ioBroker Check / Service Bot",
+        "zh-cn": "更新依赖项并修复了ioBroker Check / Service Bot发现的问题"
+      },
       "1.5.0": {
         "en": "added Skylight device<br>use keep alive for HTTP connections to avoid SNAT port exhaustion (e.g. Docker environments)",
         "de": "Skylight hinzugefügt<br>verwende Keep Alive für HTTP-Verbindungen um SNAT port exhaustion (z.B. bei Docker Umgebungen) zu verhindern",
@@ -114,13 +127,23 @@
     "platform": "Javascript/Node.js",
     "dependencies": [
       {
-        "js-controller": ">=3.3.22"
+        "js-controller": ">=5.1.1"
       }
     ],
-    "license": "MIT",
+    "globalDependencies": [
+      {
+        "admin": ">=6.0.0"
+      }
+    ],
+    "licenseInformation": {
+      "license": "MIT",
+      "type": "free"
+    },
     "mode": "daemon",
     "icon": "nanoleaf-lightpanels.png",
-    "materialize": true,
+    "adminUI": {
+      "config": "materialize"
+    },
     "compact": true,
     "enabled": true,
     "extIcon": "https://raw.githubusercontent.com/daniel-2k/ioBroker.nanoleaf-lightpanels/master/admin/nanoleaf-lightpanels.png",
@@ -139,7 +162,8 @@
     "messagebox": true,
     "type": "lighting",
     "connectionType": "local",
-    "dataSource": "push"
+    "dataSource": "push",
+    "tier": 2
   },
   "native": {
     "port": 16021,
