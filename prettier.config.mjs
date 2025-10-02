@@ -3,6 +3,5 @@ import prettierConfig from '@iobroker/eslint-config/prettier.config.mjs';
 export default {
     ...prettierConfig,
     useTabs: true,
-    tabWidth: 4,
-    endOfLine: "crlf"
+    tabWidth: 4
 };
