@@ -30,7 +30,7 @@
     "url": "https://github.com/daniel-2k/ioBroker.nanoleaf-lightpanels"
   },
   "engines": {
-      "node": ">=18"
+    "node": ">=18"
   },
   "dependencies": {
     "@iobroker/adapter-core": "^3.3.2",
@@ -38,12 +38,10 @@
     "underscore": ">= 1.13.7"
   },
   "devDependencies": {
+    "@iobroker/eslint-config": "^2.2.0",
     "@iobroker/testing": "^5.1.1",
-    "chai": "^4.3.10",
-    "eslint": "^8.57.0",
     "axios": "^1.7.2",
     "chai": "^6.2.0",
-    "eslint": "^8.52.0",
     "gulp": "^5.0.0",
     "mocha": "^11.7.3"
   },
