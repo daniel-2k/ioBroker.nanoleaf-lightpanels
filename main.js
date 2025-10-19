@@ -1203,7 +1203,7 @@ function createNanoleafDevice(deviceInfo, callback) {
 				max: 60,
 				read: true,
 				write: true,
-				role: 'value.interval',
+				role: 'level.interval',
 				desc: 'Brightness transition duration in seconds',
 			},
 			native: {},
