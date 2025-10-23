@@ -1,20 +1,20 @@
 {
   "common": {
     "name": "nanoleaf-lightpanels",
-    "version": "1.5.1",
+    "version": "1.6.0",
     "news": {
-      "1.5.1": {
-        "en": "update dependencies and fixed ioBroker Check / Service Bot findings",
-        "de": "Aktualisierung der Abhängigkeiten und Behebung der ioBroker Check / Service Bot-Funde.",
-        "ru": "обновлены зависимости и исправлены найденные ошибки ioBroker Check / Service Bot",
-        "pt": "Atualização de dependências e correção de problemas identificados pelo ioBroker Check / Service Bot.",
-        "nl": "Bijgewerkte afhankelijkheden en oplossingen voor ioBroker Check / Service Bot bevindingen.",
-        "fr": "Mise à jour des dépendances et correction des résultats de ioBroker Check / Service Bot.",
-        "it": "Aggiornamento delle dipendenze e risoluzione dei problemi individuati da ioBroker Check/Service Bot",
-        "es": "actualización de dependencias y corrección de hallazgos del ioBroker Check / Service Bot.",
-        "pl": "zaktualizowano zależności i naprawiono znalezione problemy z ioBroker Check / Service Bot.",
-        "uk": "оновлено залежності та виправлені помилки ioBroker Check / Service Bot",
-        "zh-cn": "更新依赖项并修复了ioBroker Check / Service Bot发现的问题"
+      "1.6.0": {
+        "en": "update dependencies and fixed ioBroker Check, Node.js 20 required / replaced deprecated functions / fixed roles",
+        "de": "Dependencies aktualisiert und ioBroker Checks gefixt, Node.js 20 erforderlich / veraltete Funktionen ersetzt /Rollen gefixt",
+        "ru": "обновления зависимостей и исправлена проверка IOBroker, требуется Node.js 20/ заменены устаревшие функции/исправлены роли",
+        "pt": "atualize dependências e corrigiu IOBroker Check, Node.js 20 requereu/substituiu funções obsoletas",
+        "nl": "update-afhankelijkheden en vaste IOBroker Check, Node.js 20 vereist/verouderde functies vervangen/vaste rollen",
+        "fr": "dépendances de mise à jour et correction d'IOBroker Check, Node.js 20 requis/fonctions obsolètes remplacées/rôles fixes",
+        "it": "aggiornare le dipendenze e correggere IOBroker Check, Node.js 20 richieste/funzioni obsolete",
+        "es": "actualizar dependencias y corregir IOBroker Check, Node.js 20 requerido/reemplazó funciones obsoletas/roles fijos",
+        "pl": "aktualizuj zależności i poprawiono sprawdzanie ioBroker, Node.js 20 wymagany/zastąpiono przestarzałe funkcje/ stałe role",
+        "uk": "оновлення залежностей та виправлена перевірка IObroker, Node.js 20 необхідно/ замінені застарілі функції/виправлені ролі",
+        "zh-cn": "更新依赖关系并修复了 IOBroker Check，需要 Node.js 20 /替换了过时的功能/修复了角色"
       },
       "1.5.0": {
         "en": "added Skylight device<br>use keep alive for HTTP connections to avoid SNAT port exhaustion (e.g. Docker environments)",

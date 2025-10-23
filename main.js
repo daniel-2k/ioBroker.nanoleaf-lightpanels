@@ -1080,14 +1080,14 @@ function createNanoleafDevice(deviceInfo, callback) {
 			adapter.log.info(`New nanoleaf device '${NLdevice.name}' (${model}) detected!`);
 
 			// Create nanoleaf Device
-			adapter.createDevice(
-				NLdevice.deviceName,
-				{
+			adapter.setObjectNotExists(NLdevice.deviceName, {
+				type: 'device',
+				common: {
 					name: `${NLdevice.name} Device`,
 					icon: `/icons/${NLdevice.deviceName.toLocaleLowerCase()}.png`,
 				},
-				{},
-			);
+				native: {},
+			});
 		}
 		// create info Channel
 		adapter.setObjectNotExists(`${NLdevice.deviceName}.info`, {
@@ -1468,14 +1468,14 @@ function CreateRhythmDevice(connected) {
 			adapter.log.debug('Rhythm module information available. Creating Rhythm device...');
 
 			// create Rhythm Device
-			adapter.createDevice(
-				'Rhythm',
-				{
+			adapter.setObjectNotExists('Rhythm', {
+				type: 'device',
+				common: {
 					name: 'Light Panels Rhythm Module Device',
 					icon: '/icons/rhythm.png',
 				},
-				{},
-			);
+				native: {},
+			});
 		}
 		// create Rhythm Channel
 		adapter.setObjectNotExists('Rhythm.info', {
@@ -1498,7 +1498,7 @@ function CreateRhythmDevice(connected) {
 			},
 			native: {},
 		});
-		adapter.deleteState('Rhythm', 'info', 'rhythmMode'); // state moved outside info channel (clean up for older versions)
+		adapter.delObject('Rhythm.info.rhythmMode'); // state moved outside info channel (clean up for older versions)
 
 		// create rhythm module states if connected, else delete these
 		if (connected) {
@@ -1594,11 +1594,11 @@ function CreateRhythmModuleStates() {
 // Deletes Rhythm module states
 function DeleteRhythmModuleStates() {
 	adapter.log.debug('Delete Rhythm module states...');
-	adapter.deleteState('Rhythm', 'info', 'active');
-	adapter.deleteState('Rhythm', 'info', 'auxAvailable');
-	adapter.deleteState('Rhythm', 'info', 'firmwareVersion');
-	adapter.deleteState('Rhythm', 'info', 'hardwareVersion');
-	adapter.deleteState('Rhythm', '', 'rhythmMode');
+	adapter.delObject('Rhythm.info.active');
+	adapter.delObject('Rhythm.info.auxAvailable');
+	adapter.delObject('Rhythm.info.firmwareVersion');
+	adapter.delObject('Rhythm.info.hardwareVersion');
+	adapter.delObject('Rhythm.rhythmMode');
 }
 
 function startAdapterProcessing(deviceInfo) {
