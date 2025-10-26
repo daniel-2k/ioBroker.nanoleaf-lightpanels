@@ -55,5 +55,10 @@
   "bugs": {
     "url": "https://github.com/daniel-2k/ioBroker.nanoleaf-lightpanels/issues"
   },
+  "files": [
+    "admin/",
+    "lib/",
+    "io-package.json"
+  ],
   "readmeFilename": "README.md"
 }
