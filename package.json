@@ -15,7 +15,7 @@
   "homepage": "https://github.com/daniel-2k/ioBroker.nanoleaf-lightpanels",
   "license": "MIT",
   "keywords": [
-    "iobroker",
+    "ioBroker",
     "nanoleaf",
     "light panels",
     "canvas",
@@ -41,9 +41,7 @@
     "@iobroker/eslint-config": "^2.2.0",
     "@iobroker/testing": "^5.1.1",
     "axios": "^1.7.2",
-    "chai": "^6.2.0",
     "gulp": "^5.0.0",
-    "mocha": "^11.7.3"
   },
   "main": "main.js",
   "scripts": {
