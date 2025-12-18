@@ -19,6 +19,7 @@ const KEEPALIVE_INTERVAL = 75000; // interval in ms when device is not alive any
 const MIN_KEEPALIVE_POLLING_INTERVAL = 10; // minimum interval in seconds for polling keep alive detection
 const SSDP_MSEARCH_TIMEOUT = 5000; // time to wait for getting SSDP answers for a MSEARCH
 const MSEARCH_ST = 'ssdp:all'; // Service type for MESEARCH -> all to develop all kind of nanoleaf devices
+const SEMVER = require('semver');
 
 // nanoleaf device definitions
 const NANOLEAF_DEVICES = {
@@ -1047,7 +1048,7 @@ function createNanoleafDevice(deviceInfo, callback) {
 		}
 
 		// enable SSE instead of polling for firmwares higher then in specification given and disable SSE when selected in admin
-		if (deviceInfo.firmwareVersion > NLdevice.SSEFirmware && !adapter.config.disableSSE) {
+		if (SEMVER.gt(deviceInfo.firmwareVersion, NLdevice.SSEFirmware) && !adapter.config.disableSSE) {
 			SSEenabled = true;
 		} else {
 			SSEenabled = false;

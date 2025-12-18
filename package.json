@@ -35,7 +35,8 @@
   "dependencies": {
     "@iobroker/adapter-core": "^3.3.2",
     "eventsource": ">=4.0.0",
-    "underscore": ">= 1.13.7"
+    "underscore": ">= 1.13.7",
+    "semver": "^7.7.3"
   },
   "devDependencies": {
     "@iobroker/eslint-config": "^2.2.0",
