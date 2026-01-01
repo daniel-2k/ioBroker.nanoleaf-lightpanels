@@ -198,4 +198,4 @@ You can use the nanoleaf vis demo project found in the /vis subfolder on github.
 ## License
 The MIT License (MIT)
 
-Copyright (c) 2025 daniel_2k <daniel_2k@outlook.com>
+Copyright (c) 2025-2026 daniel_2k <daniel_2k@outlook.com>
