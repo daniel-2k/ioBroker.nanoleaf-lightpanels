@@ -8,8 +8,8 @@ let adapter;
 
 // constants
 const SSDPUPNP = require(`${__dirname}/lib/node-upnp-ssdp`);
-const DNS = require('dns');
-const NET = require('net');
+const DNS = require('node:dns');
+const NET = require('node:net');
 const AURORA_API = require(`${__dirname}/lib/nanoleaf-aurora-api`);
 const STATE_EXCLUDES = ['brightness_duration']; // Exclude list for states
 const MIN_POLLING_INTERVAL = 500; // minimum polling interval in milliseconds
