@@ -59,6 +59,9 @@ You can use the nanoleaf vis demo project found in the /vis subfolder on github.
 
 ## Changelog
 
+### **WORK IN PROGRESS**
+- (copilot) Adapter requires node.js >= 22 now
+
 ### 1.6.0 (2025-10-23)
 * (daniel_2k) changed: Node.js 20 required
 * (daniel_2k) changed: update dependencies and fixed ioBroker Check / Service Bot findings
