@@ -195,6 +195,8 @@ You can use the nanoleaf vis demo project found in the /vis subfolder on github.
 ### 0.1.0 (2018-04-23)
 * (daniel_2k) initial release
 
+[Older changelogs can be found there](CHANGELOG_OLD.md)
+
 ## License
 The MIT License (MIT)
 
